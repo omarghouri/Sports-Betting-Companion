@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
 from supabase import create_client
-from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import os
 supabase_url="https://tbaahynetpwosthiqdzh.supabase.co"
@@ -8,8 +7,11 @@ Subabase_API_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 
 def get_user_bets(user: int, bet_type: str):
   user_bets = supabase.table("bets").select("user_id, result").execute()
+  if user_bets.user_id not in user_bets:
+    print("User is not in database")
 
 def get_matches(stage: str):
+  
 
 
 
