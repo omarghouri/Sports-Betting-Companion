@@ -166,7 +166,7 @@ using (
 # Sports Betting Companion API
 
 ## What it does
-[2 sentences]
+Getting information from the database and print it out
 
 ## Setup
 1. `pip install -r requirements.txt`
