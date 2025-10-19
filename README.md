@@ -175,39 +175,39 @@ Our API connects to Supabase tables to implement business logic for a sports pre
 4. Test at http://localhost:8000/docs
 
 ## Endpoints (at a minimum)
-- GET /teams – List all teams
-- GET /teams/{team_id}/players – List all players from a specific team
-- GET /matches – List all matches
+- GET /teams – Retrieve all teams
+- GET /matches – Retrieve all matches
 - POST /matches – Add a new match
-- GET /picks/{user_id} – Get all predictions made by a specific user
-- POST /picks – Add a new user prediction
-- GET /matches/{match_id}/pick-stats – Show how many users picked each team
+- GET /picks – Get all user predictions
+- POST /picks – Add a new prediction
+- GET /results – Retrieve match results
+- POST /results – Add or update a match result
+- GET /user_bets – Retrieve bets by user and type
 
 ## Key Business Rule
-Endpoint 1: GET /teams
-- Displays all teams in the teams table with name and country code.
+Endpoint 1: get_teams()
+- Displays all teams stored in the teams table.
+- Each team includes its name, country code, and group.
 
-Endpoint 2: GET /teams/{team_id}/players
-- Shows all players connected to a given team by joining players.team_id = teams.id.
-
-Endpoint 3: GET /matches
-- Returns all upcoming matches from the matches table.
-- Filters out matches that already ended.
-
-Endpoint 4: POST /matches
-- Adds a new match to the schedule.
+Endpoint 2: get_matches() / post_matches()
+- GET: Returns all matches in the matches table, including team names, match date, and stage.
+- POST: Adds a new match.
 - Requires team1_id, team2_id, match_date, and venue.
-- Ensures match date is in the future and both teams are different.
-  
-Endpoint 5: GET /picks/{user_id}
-- Returns all predictions made by that user with match details joined in.
-  
-Endpoint 6: POST /picks
-- Records a user’s prediction for a match.
-- Ensures user cannot make duplicate picks for the same match and only for upcoming matches.
-  
-Endpoint 7: GET /matches/{match_id}/pick-stats
-- Aggregates the total number of users who picked each team for that match.
+- Ensures the date is in the future and teams are not the same.
+
+Endpoint 3: get_picks() / post_picks()
+- GET: Retrieves all user predictions stored in the bets table.
+- POST: Creates a new prediction for a user.
+- Prevents duplicate predictions for the same user and match.
+- Only allows predictions for upcoming matches.
+
+Endpoint 4: get_results() / post_results()
+- GET: Returns finalized match results with scores.
+- POST: Allows updating results (e.g., setting final scores and marking matches as complete).
+
+Endpoint 5: get_user_bets()
+- Retrieves all bets for a specific user and bet_type.
+- Returns their past predictions and outcomes.
 
 ### Supabase API Understanding
 
