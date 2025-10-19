@@ -166,7 +166,7 @@ using (
 # Sports Betting Companion API
 
 ## What it does
-Getting information from the database and print it out
+Our API connects to Supabase tables to implement business logic for a sports prediction platform. It allows users to view teams, players, matches, and record their predictions. 
 
 ## Setup
 1. `pip install -r requirements.txt`
@@ -175,14 +175,48 @@ Getting information from the database and print it out
 4. Test at http://localhost:8000/docs
 
 ## Endpoints (at a minimum)
-- `GET /[entity]` - List all
-- `POST /[entity]` - Create new
-- `POST /[action_1]` - [Business logic description]
-- `POST /[action_2]` - [Business logic description]
-- `POST /[action_3]` - [Business logic description]
+GET /teams – List all teams
+GET /teams/{team_id}/players – List all players from a specific team
+GET /matches – List all matches
+POST /matches – Add a new match
+GET /picks/{user_id} – Get all predictions made by a specific user
+POST /picks – Add a new user prediction
+GET /matches/{match_id}/pick-stats – Show how many users picked each team
 
 ## Key Business Rule
-[Explain your business logic endpoints in 2-3 sentences]
+Endpoint 1: GET /teams
+- Displays all teams in the teams table with name and country code.
+
+Endpoint 2: GET /teams/{team_id}/players
+- Shows all players connected to a given team by joining players.team_id = teams.id.
+
+Endpoint 3: GET /matches
+- Returns all upcoming matches from the matches table.
+- Filters out matches that already ended.
+
+Endpoint 4: POST /matches
+- Adds a new match to the schedule.
+- Requires team1_id, team2_id, match_date, and venue.
+- Ensures match date is in the future and both teams are different.
+  
+Endpoint 5: GET /picks/{user_id}
+- Returns all predictions made by that user with match details joined in.
+  
+Endpoint 6: POST /picks
+- Records a user’s prediction for a match.
+- Ensures user cannot make duplicate picks for the same match and only for upcoming matches.
+  
+Endpoint 7: GET /matches/{match_id}/pick-stats
+- Aggregates the total number of users who picked each team for that match.
+
+### Supabase API Understanding
+
+Supabase’s auto-generated API allows simple CRUD operations, but cannot enforce higher-level logic like preventing duplicate picks or filtering completed matches.
+
+Our FastAPI layer builds on top of Supabase by adding:
+- Validation for match dates and team IDs
+- Logic to prevent multiple picks per match per user
+- Joined responses that return readable team and player data
 
 ### Setup Instructions
 - pip install supabase
