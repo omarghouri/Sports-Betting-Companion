@@ -209,14 +209,11 @@ Endpoint 5: get_user_bets()
 - Retrieves all bets for a specific user and bet_type.
 - Returns their past predictions and outcomes.
 
-### Supabase API Understanding
-
-Supabase’s auto-generated API allows simple CRUD operations, but cannot enforce higher-level logic like preventing duplicate picks or filtering completed matches.
-
-Our FastAPI layer builds on top of Supabase by adding:
-- Validation for match dates and team IDs
-- Logic to prevent multiple picks per match per user
-- Joined responses that return readable team and player data
+### Key Business Rules
+- Users cannot create duplicate picks for the same match.
+- Match date must be in the future for upcoming matches.
+- team1_id and team2_id must be different.
+- When results are posted, related bets are automatically marked as win, loss, or push.
 
 ### Setup Instructions
 - pip install supabase
