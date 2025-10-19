@@ -190,20 +190,20 @@ Endpoint 1: get_teams()
 - Each team includes its name, country code, and group.
 
 Endpoint 2: get_matches() / post_matches()
-- GET: Returns all matches in the matches table, including team names, match date, and stage.
-- POST: Adds a new match.
+- Returns all matches in the matches table, including team names, match date, and stage.
+- Adds a new match.
 - Requires team1_id, team2_id, match_date, and venue.
 - Ensures the date is in the future and teams are not the same.
 
 Endpoint 3: get_picks() / post_picks()
-- GET: Retrieves all user predictions stored in the bets table.
-- POST: Creates a new prediction for a user.
+- Retrieves all user predictions stored in the bets table.
+- Creates a new prediction for a user.
 - Prevents duplicate predictions for the same user and match.
 - Only allows predictions for upcoming matches.
 
 Endpoint 4: get_results() / post_results()
-- GET: Returns finalized match results with scores.
-- POST: Allows updating results (e.g., setting final scores and marking matches as complete).
+- Returns finalized match results with scores.
+- Allows updating results (e.g., setting final scores and marking matches as complete).
 
 Endpoint 5: get_user_bets()
 - Retrieves all bets for a specific user and bet_type.
