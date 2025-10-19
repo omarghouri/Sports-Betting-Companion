@@ -10,7 +10,9 @@ def get_user_bets(user: int, bet_type: str):
   if user_bets.user_id not in user_bets:
     print("User is not in database")
 
-def get_matches(stage: str):
+def get_matches(team1_id: int, team2_id: int, stage: str):
+  match_info=supabase.table("matches").select("team1_id","team2_id","stage").execute()
+  return match_info
   
 
 
