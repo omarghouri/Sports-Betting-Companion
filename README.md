@@ -175,13 +175,13 @@ Our API connects to Supabase tables to implement business logic for a sports pre
 4. Test at http://localhost:8000/docs
 
 ## Endpoints (at a minimum)
-GET /teams – List all teams
-GET /teams/{team_id}/players – List all players from a specific team
-GET /matches – List all matches
-POST /matches – Add a new match
-GET /picks/{user_id} – Get all predictions made by a specific user
-POST /picks – Add a new user prediction
-GET /matches/{match_id}/pick-stats – Show how many users picked each team
+- GET /teams – List all teams
+- GET /teams/{team_id}/players – List all players from a specific team
+- GET /matches – List all matches
+- POST /matches – Add a new match
+- GET /picks/{user_id} – Get all predictions made by a specific user
+- POST /picks – Add a new user prediction
+- GET /matches/{match_id}/pick-stats – Show how many users picked each team
 
 ## Key Business Rule
 Endpoint 1: GET /teams
