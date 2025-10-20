@@ -129,7 +129,7 @@ def post_results(match_id: int, score_team1: int, score_team2: int):
 
         return {"message": "Results updated successfully."}
     except Exception as e:
-        raise HTTPException(status_code=400, "Unable to add results")
+        raise HTTPException(status_code=400, detail = "Unable to add results")
 
 
 @app.get("/user_bets")
@@ -143,4 +143,4 @@ def get_user_bets(user_id: str, bet_type: str):
             "bets": result.data
         }
     except Exception as e:
-        raise HTTPException(status_code=400, "Bet Type or user_id is invalid")
+        raise HTTPException(status_code=400, detail = "Bet Type or user_id is invalid")
