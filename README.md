@@ -171,7 +171,7 @@ Our API connects to Supabase tables to implement business logic for a sports pre
 ## Setup
 1. `pip install -r requirements.txt`
 2. Add `.env` with Supabase credentials
-3. `uvicorn main:app --reload`
+3. `uvicorn api:app --reload`
 4. Test at http://localhost:8000/docs
 
 ## Endpoints (at a minimum)
