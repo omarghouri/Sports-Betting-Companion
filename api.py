@@ -4,8 +4,14 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime, timezone
 
-app = FastAPI(title="Sports Betting Companion API")
+load_dotenv()
 
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+app = FastAPI(title="Sports Betting Companion API")
 
 @app.get("/")
 def root():
