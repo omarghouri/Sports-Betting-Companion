@@ -25,7 +25,7 @@ def get_teams():
         result = supabase.table("teams").select("*").execute()
         return result.data
     except Exception as e:
-        raise HTTPException(status_code=400, "Team not in Tournament Database")
+        raise HTTPException(status_code=400, detail = "Team not in Tournament Database")
 
 
 @app.get("/matches")
@@ -35,7 +35,7 @@ def get_matches():
         result = supabase.table("matches").select("*").execute()
         return result.data
     except Exception as e:
-        raise HTTPException(status_code=400,"Unable to retrieve matches")
+        raise HTTPException(status_code=400,detail = "Unable to retrieve matches")
 
 
 @app.post("/matches")
@@ -61,7 +61,7 @@ def post_matches(team1_id: int, team2_id: int, match_date: str, venue: str, stag
 
         return result.data[0]
     except Exception as e:
-        raise HTTPException(status_code=400, "Unable to post match")
+        raise HTTPException(status_code=400, detail = "Unable to post match")
 
 
 @app.get("/picks")
@@ -71,7 +71,7 @@ def get_picks():
         result = supabase.table("bets").select("*").execute()
         return result.data
     except Exception as e:
-        raise HTTPException(status_code=400, "Unable to obtain picks from database")
+        raise HTTPException(status_code=400, detail = "Unable to obtain picks from database")
 
 
 @app.post("/picks")
@@ -95,7 +95,7 @@ def post_picks(user_id: str, match_id: int, bet_type: str, bet_on: str, odds: in
         }).execute()
         return result.data[0]
     except Exception as e:
-        raise HTTPException(status_code=400, "Unable to insert post into database")
+        raise HTTPException(status_code=400, detail = "Unable to insert post into database")
 
 
 @app.get("/results")
@@ -105,7 +105,7 @@ def get_results():
         result = supabase.table("matches").select("*").eq("status", "final").execute()
         return result.data
     except Exception as e:
-        raise HTTPException(status_code=400, "Match has not been completed")
+        raise HTTPException(status_code=400, detail = "Match has not been completed")
 
 
 @app.post("/results")
