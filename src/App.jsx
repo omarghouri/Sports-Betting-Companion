@@ -64,7 +64,7 @@ function UpcomingGamesBar() {
   );
 }
 
-#Omar added the Value Bets Panel
+// Omar added the Value Bets Panel
 function ValueBetsPanel() {
   // Example model output specifically for WC 2026; replace with your calc feed
   const bets = [
