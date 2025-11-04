@@ -4,6 +4,7 @@
 - **[Name]**: Built [feature/component]
 - **Omar Ghouri**: Built Value Bets Panel
 - **[Name]**: Built [feature/component]
+- **[Name]**: Built [feature/component]
 
 ## What It Does
 Our frontend showcases xyz
