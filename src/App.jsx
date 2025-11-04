@@ -63,3 +63,50 @@ function UpcomingGamesBar() {
     </section>
   );
 }
+
+/* --------------------- Value Bets Panel --------------------- */
+function ValueBetsPanel() {
+  // Example model output specifically for WC 2026; replace with your calc feed
+  const bets = [
+    // edge is model_prob - implied_prob; ev% is expected value summary
+    { id: 1, match: "USA vs JAM", market: "Moneyline", pick: "USA", fair: "+105", book: "+130", edge: "+2.9%", ev: "+6.1%" },
+    { id: 2, match: "BRA vs NOR", market: "Asian Handicap", pick: "BRA -1.0", fair: "-150", book: "-120", edge: "+3.4%", ev: "+4.8%" },
+    { id: 3, match: "ENG vs SEN", market: "Under", pick: "U2.25", fair: "-115", book: "+100", edge: "+2.2%", ev: "+3.9%" },
+    { id: 4, match: "CAN vs KOR", market: "Both Teams To Score", pick: "Yes", fair: "+105", book: "+125", edge: "+2.0%", ev: "+2.7%" },
+  ];
+
+  return (
+    <aside style={styles.sidebar} aria-label="Top Value Bets">
+      <h3 style={styles.sidebarTitle}>Top Value Bets — World Cup 2026</h3>
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            <th style={styles.th}>Match</th>
+            <th style={styles.th}>Market</th>
+            <th style={styles.th}>Pick</th>
+            <th style={styles.th}>Fair</th>
+            <th style={styles.th}>Book</th>
+            <th style={styles.th}>Edge</th>
+            <th style={styles.th}>EV%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bets.map(b => (
+            <tr key={b.id} style={styles.row}>
+              <td style={styles.td}>{b.match}</td>
+              <td style={styles.td}>{b.market}</td>
+              <td style={styles.td}><strong>{b.pick}</strong></td>
+              <td style={styles.td}>{b.fair}</td>
+              <td style={styles.td}>{b.book}</td>
+              <td style={{ ...styles.td, color: "#0a7" }}>{b.edge}</td>
+              <td style={{ ...styles.td, color: "#0a7" }}>{b.ev}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <small style={{ color: "#666" }}>
+        * Edges are illustrative. Always check limits, vig, and shop lines across books.
+      </small>
+    </aside>
+  );
+}
