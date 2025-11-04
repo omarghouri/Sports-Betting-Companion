@@ -3,7 +3,7 @@
 ## Team & Contributions
 - **[Name]**: Built [feature/component]
 - **Omar Ghouri**: Built Value Bets Panel
-- **[Name]**: Built [feature/component]
+- **Bouanani Idrissi Oumaima**: Built Chatbot Widget
 - **[Name]**: Built [feature/component]
 
 ## What It Does
