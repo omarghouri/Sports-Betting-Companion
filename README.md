@@ -4,7 +4,7 @@
 - **[Name]**: Built [feature/component]
 - **Omar Ghouri**: Built Value Bets Panel
 - **Bouanani Idrissi Oumaima**: Built Chatbot Widget
-- **[Name]**: Built Formatting for News Feed and Styles, Formatting and Fonts for the webpage
+- **Mike D'Auria**: Built Formatting for News Feed and did Styles, Formatting and Fonts for the webpage
 
 ## What It Does
 Our frontend showcases xyz
