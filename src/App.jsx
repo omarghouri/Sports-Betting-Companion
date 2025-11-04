@@ -110,3 +110,39 @@ function ValueBetsPanel() {
     </aside>
   );
 }
+
+#Mike Added News Feed
+
+
+function NewsFeed() {
+  const articles = [
+    {
+      id: 1,
+      title: "FIFA Finalizes 2026 Match Calendar Windows",
+      blurb: "Key venues across the U.S., Canada, and Mexico outlined; group-stage density optimized for recovery.",
+    },
+    {
+      id: 2,
+      title: "Roster Watch: Young Forwards in Form",
+      blurb: "USMNT and Brazil prospects surge ahead of camp selections; injuries could reshape depth charts.",
+    },
+    {
+      id: 3,
+      title: "Model Notes: Pace & Travel Adjustments",
+      blurb: "Altitude, travel corridors, and rest-day gaps added to expected-goals baselines for 2026.",
+    },
+  ];
+
+  return (
+    <section style={styles.newsSection} aria-label="World Cup News">
+      <h2 style={{ marginTop: 0 }}>News Articles</h2>
+      {articles.map(a => (
+        <article key={a.id} style={styles.newsCard}>
+          <h4 style={{ margin: "0 0 6px" }}>{a.title}</h4>
+          <p style={{ margin: 0, color: "#444" }}>{a.blurb}</p>
+        </article>
+      ))}
+    </section>
+  );
+}
+
