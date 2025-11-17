@@ -174,7 +174,7 @@ Our API connects to Supabase tables to implement business logic for a sports pre
 3. `uvicorn api:app --reload`
 4. Test at http://localhost:8000/docs
 
-## Endpoints (at a minimum)
+## Endpoints
 - GET /teams – Retrieve all teams
 - GET /matches – Retrieve all matches
 - POST /matches – Add a new match
