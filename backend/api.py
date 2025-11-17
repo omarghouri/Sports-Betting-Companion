@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
@@ -12,6 +13,20 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 app = FastAPI(title="Sports Betting Companion API")
+
+# Add CORS middleware to allow frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vite default dev server
+        "http://localhost:3000",  # Alternative React dev server
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root():
@@ -144,3 +159,21 @@ def get_user_bets(user_id: str, bet_type: str):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail = "Bet Type or user_id is invalid")
+
+
+#value bets
+@app.get("/valuebets")
+def get_value_bets():
+    """
+    Return all model-generated value bets from Supabase.
+    Expects a 'value_bets' table with columns like:
+    id, match, market, pick, fair_odds, book, edge, ev
+    """
+    try:
+        result = supabase.table("valuebets").select("*").execute()
+        return result.data
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Unable to retrieve value bets",
+        )
