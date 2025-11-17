@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { fetchValueBets } from "./api";
+
 
 function App() {
   return (
@@ -63,14 +65,31 @@ function UpcomingGamesBar() {
 
 // Omar added the Value Bets Panel
 function ValueBetsPanel() {
-  // Example model output specifically for WC 2026; replace with your calc feed
-  const bets = [
-    // edge is model_prob - implied_prob; ev% is expected value summary
-    { id: 1, match: "USA vs JAM", market: "Moneyline", pick: "USA", fair: "+105", book: "+130", edge: "+2.9%", ev: "+6.1%" },
-    { id: 2, match: "BRA vs NOR", market: "Asian Handicap", pick: "BRA -1.0", fair: "-150", book: "-120", edge: "+3.4%", ev: "+4.8%" },
-    { id: 3, match: "ENG vs SEN", market: "Under", pick: "U2.25", fair: "-115", book: "+100", edge: "+2.2%", ev: "+3.9%" },
-    { id: 4, match: "CAN vs KOR", market: "Both Teams To Score", pick: "Yes", fair: "+105", book: "+125", edge: "+2.0%", ev: "+2.7%" },
-  ];
+  const [bets, setBets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchValueBets()
+      .then((rows) => {
+        const mapped = rows.map((row) => ({
+          id: row.id,
+          match: row.match || row.Match,
+          market: row.market || row.Market,
+          pick: row.pick || row.Pick,
+          fair: row.fair_odds || row["Fair Odds"],
+          book: row.book || row.Book,
+          edge: row.edge || row.Edge,
+          ev: row.ev || row.EV,
+        }));
+        setBets(mapped);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError("Failed to load value bets.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <aside style={styles.sidebar} aria-label="Top Value Bets">
