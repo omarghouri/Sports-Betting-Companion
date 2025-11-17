@@ -150,7 +150,14 @@ Tracks bets users place on matches.
 - `amount` (NUMERIC) – wagered amount  
 - `result` (TEXT: pending, won, lost, void)  
 - `created_at` (TIMESTAMPTZ, default now)
-
+##### 6) 'valuebets'
+- 'id' (BIGINT, PK)
+-  'Match' (Text)
+- 'Market' (Text", Type of Bet Placed
+- "Pick": (Text, Who the user picked
+- "Fair Odds": (Text, Our Odds)
+- "Book": (Text, SportsBook Odds)
+- "Edge:(Text, Difference in Probability between Success from ours to market odds)
 ### Security Model
 We use **Row Level Security (RLS)** to ensure that users can only view and modify their own data.  
 - Only authenticated users can add or view their personalized bet analyses.
