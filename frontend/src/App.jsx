@@ -175,15 +175,189 @@ function ValueBetsPanel() {
 /* ----------------------- Chatbot Widget ----------------------- */
 function ChatbotWidget() {
   const [messages, setMessages] = useState([
-    { role: "bot", text: "Hey! Ask me about value bets, odds, or fixtures for World Cup 2026." },
+    { role: "bot", text: "Hey! Ask me about matches, teams, value bets, or odds for World Cup 2026." },
   ]);
   const [input, setInput] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const send = () => {
+  const processQuery = async (query) => {
+    const lowerQuery = query.toLowerCase();
+    
+    // Pattern 1: Matches with a specific team
+    if (lowerQuery.includes("matches") || lowerQuery.includes("games") || lowerQuery.includes("fixtures")) {
+      // Extract team name - look for common patterns
+      let teamName = null;
+      
+      // Pattern: "matches with [team]" or "games with [team]"
+      const withMatch = lowerQuery.match(/(?:matches|games|fixtures).*?(?:with|for|of)\s+([a-z]+)/);
+      if (withMatch) {
+        teamName = withMatch[1];
+      }
+      
+      // Pattern: "[team] matches" or "[team] games"
+      const teamFirstMatch = lowerQuery.match(/([a-z]+)\s+(?:matches|games|fixtures)/);
+      if (!teamName && teamFirstMatch) {
+        teamName = teamFirstMatch[1];
+      }
+
+      if (teamName) {
+        try {
+          const matches = await fetchMatchCards();
+          const teamMatches = matches.filter(m => 
+            m.team1.toLowerCase().includes(teamName) || 
+            m.team2.toLowerCase().includes(teamName)
+          );
+
+          if (teamMatches.length === 0) {
+            return `I couldn't find any matches for "${teamName}". Available teams include: Argentina, France, Brazil, England, Germany, and more.`;
+          }
+
+          let response = `Found ${teamMatches.length} match(es) involving ${teamName}:\n\n`;
+          teamMatches.forEach(match => {
+            const date = new Date(match.match_date).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            });
+            const score = match.score_team1 !== null 
+              ? ` (${match.score_team1}-${match.score_team2})`
+              : '';
+            response += `• ${match.team1} vs ${match.team2}${score} - ${date} at ${match.venue} (${match.stage})\n`;
+          });
+
+          return response;
+        } catch (error) {
+          return "Sorry, I had trouble fetching match data. Please try again.";
+        }
+      }
+    }
+
+    // Pattern 2: Value bets query
+    if (lowerQuery.includes("value bet") || lowerQuery.includes("best bet") || lowerQuery.includes("edge")) {
+      try {
+        const valueBets = await fetchValueBets();
+        
+        if (valueBets.length === 0) {
+          return "No value bets available at the moment.";
+        }
+
+        // Get top 3 bets by edge
+        const topBets = valueBets
+          .sort((a, b) => parseFloat(b.edge || b.Edge || 0) - parseFloat(a.edge || a.Edge || 0))
+          .slice(0, 3);
+
+        let response = "Here are the top value bets right now:\n\n";
+        topBets.forEach((bet, idx) => {
+          const match = bet.match || bet.Match;
+          const market = bet.market || bet.Market;
+          const pick = bet.pick || bet.Pick;
+          const edge = bet.edge || bet.Edge;
+          response += `${idx + 1}. ${match} - ${market}: ${pick} (Edge: ${edge})\n`;
+        });
+
+        return response;
+      } catch (error) {
+        return "Sorry, I had trouble fetching value bets. Please try again.";
+      }
+    }
+
+    // Pattern 3: Upcoming matches
+    if (lowerQuery.includes("upcoming") || lowerQuery.includes("next") || lowerQuery.includes("schedule")) {
+      try {
+        const matches = await fetchMatchCards();
+        const upcoming = matches
+          .filter(m => m.status === "upcoming")
+          .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
+          .slice(0, 5);
+
+        if (upcoming.length === 0) {
+          return "No upcoming matches scheduled at the moment.";
+        }
+
+        let response = "Here are the next upcoming matches:\n\n";
+        upcoming.forEach(match => {
+          const date = new Date(match.match_date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          response += `• ${match.team1} vs ${match.team2} - ${date} at ${match.venue}\n`;
+        });
+
+        return response;
+      } catch (error) {
+        return "Sorry, I had trouble fetching upcoming matches. Please try again.";
+      }
+    }
+
+    // Pattern 4: Team record/history
+    if (lowerQuery.includes("record") || lowerQuery.includes("history") || lowerQuery.includes("past")) {
+      const teamMatch = lowerQuery.match(/(?:record|history|past).*?(?:of|for)\s+([a-z]+)/);
+      if (teamMatch) {
+        const teamName = teamMatch[1];
+        try {
+          const matches = await fetchMatchCards();
+          const teamMatches = matches.filter(m => 
+            (m.team1.toLowerCase().includes(teamName) || m.team2.toLowerCase().includes(teamName)) &&
+            m.status === "finished"
+          );
+
+          if (teamMatches.length === 0) {
+            return `No finished matches found for "${teamName}".`;
+          }
+
+          let wins = 0, losses = 0, draws = 0;
+          teamMatches.forEach(match => {
+            const isTeam1 = match.team1.toLowerCase().includes(teamName);
+            if (match.score_team1 === match.score_team2) {
+              draws++;
+            } else if ((isTeam1 && match.score_team1 > match.score_team2) || 
+                       (!isTeam1 && match.score_team2 > match.score_team1)) {
+              wins++;
+            } else {
+              losses++;
+            }
+          });
+
+          return `Record for ${teamName.charAt(0).toUpperCase() + teamName.slice(1)}: ${wins}W-${losses}L-${draws}D (${teamMatches.length} matches)`;
+        } catch (error) {
+          return "Sorry, I had trouble fetching team history. Please try again.";
+        }
+      }
+    }
+
+    // Default response
+    return "I can help you with:\n• Finding matches for a specific team (e.g., 'show me Argentina matches')\n• Showing value bets (e.g., 'what are the best bets?')\n• Listing upcoming matches (e.g., 'what games are coming up?')\n• Team records (e.g., 'what's France's record?')";
+  };
+
+  const send = async () => {
     const trimmed = input.trim();
-    if (!trimmed) return;
-    setMessages(prev => [...prev, { role: "user", text: trimmed }, { role: "bot", text: "Got it — (demo): running query…" }]);
+    if (!trimmed || isProcessing) return;
+
+    setMessages(prev => [...prev, { role: "user", text: trimmed }]);
     setInput("");
+    setIsProcessing(true);
+
+    // Add a "thinking" message
+    setMessages(prev => [...prev, { role: "bot", text: "Looking that up..." }]);
+
+    try {
+      const response = await processQuery(trimmed);
+      
+      // Remove the "thinking" message and add the real response
+      setMessages(prev => {
+        const withoutThinking = prev.slice(0, -1);
+        return [...withoutThinking, { role: "bot", text: response }];
+      });
+    } catch (error) {
+      setMessages(prev => {
+        const withoutThinking = prev.slice(0, -1);
+        return [...withoutThinking, { role: "bot", text: "Sorry, something went wrong. Please try again." }];
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -192,7 +366,9 @@ function ChatbotWidget() {
       <div style={styles.chatBody}>
         {messages.map((m, i) => (
           <div key={i} style={{ ...styles.chatMsg, ...(m.role === "user" ? styles.msgUser : styles.msgBot) }}>
-            {m.text}
+            {m.text.split('\n').map((line, j) => (
+              <div key={j}>{line}</div>
+            ))}
           </div>
         ))}
       </div>
@@ -201,10 +377,21 @@ function ChatbotWidget() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyPress={e => e.key === 'Enter' && send()}
-          placeholder="Ask about a match, market, or line…"
+          placeholder="Ask about a match, team, or bet…"
           style={styles.chatInput}
+          disabled={isProcessing}
         />
-        <button onClick={send} style={styles.chatSend}>Send</button>
+        <button 
+          onClick={send} 
+          style={{
+            ...styles.chatSend,
+            opacity: isProcessing ? 0.6 : 1,
+            cursor: isProcessing ? 'not-allowed' : 'pointer'
+          }}
+          disabled={isProcessing}
+        >
+          {isProcessing ? 'Processing...' : 'Send'}
+        </button>
       </div>
     </section>
   );
@@ -285,7 +472,7 @@ const styles = {
   td: { padding: "8px 6px", borderBottom: "1px solid #f3f4f7" },
   row: { background: "white" },
 
-  /* Chatbot - Now as main section */
+  /* Chatbot */
   chatbotSection: {
     background: "white",
     border: "1px solid #e6e7ee",
