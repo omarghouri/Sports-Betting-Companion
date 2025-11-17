@@ -150,7 +150,14 @@ Tracks bets users place on matches.
 - `amount` (NUMERIC) – wagered amount  
 - `result` (TEXT: pending, won, lost, void)  
 - `created_at` (TIMESTAMPTZ, default now)
-
+##### 6) 'valuebets'
+- 'id' (BIGINT, PK)
+-  'Match' (Text)
+- 'Market' (Text", Type of Bet Placed
+- "Pick": (Text, Who the user picked
+- "Fair Odds": (Text, Our Odds)
+- "Book": (Text, SportsBook Odds)
+- "Edge:(Text, Difference in Probability between Success from ours to market odds)
 ### Security Model
 We use **Row Level Security (RLS)** to ensure that users can only view and modify their own data.  
 - Only authenticated users can add or view their personalized bet analyses.
@@ -230,8 +237,8 @@ Endpoint 5: get_user_bets()
 # Frontend Components
 
 ## Team & Contributions
-- **Linus**: Remade connections from endpoints to frontend
-- **Omar Ghouri**: Organized repository structure
+- **Linus**: Created new endpoints on back end to connect to the UI
+- **Omar Ghouri**: Organized repository structure / created api.js to manage requests from frontend to backend
 - **Bouanani Idrissi Oumaima**: 
 - **Mike D'Auria**: Remade API endpoints and Supbase Tables to reflect the information included in the frontend(valuebets and Team Tournament Performance)
 
