@@ -154,7 +154,7 @@ Tracks bets users place on matches.
 ### Security Model
 We use **Row Level Security (RLS)** to ensure that users can only view and modify their own data.  
 - Only authenticated users can add or view their personalized bet analyses.
-- Furthermore, for data privacy reasons, we restrict the Bets and Users tables to respect the users that use our product.
+- Furthermore, for data privacy reasons, we restrict the Bets and Users tables to respect the users who use our product.
 - Code: alter policy "Enable read access for all users"
 2
 on "public"."matches"
@@ -228,10 +228,10 @@ Endpoint 5: get_user_bets()
 # Frontend Components
 
 ## Team & Contributions
-- **Linus**: Built Main Program function + Header
-- **Omar Ghouri**: Built Value Bets Panel
-- **Bouanani Idrissi Oumaima**: Built Chatbot Widget
-- **Mike D'Auria**: Built Formatting for News Feed and did Styles, Formatting and Fonts for the webpage
+- **Linus**: Remade connections from endpoints to frontend
+- **Omar Ghouri**: Organized repository structure
+- **Bouanani Idrissi Oumaima**: 
+- **Mike D'Auria**: Remade API endpoints and Supbase Tables to reflect the information included in the frontend(valuebets and Team Tournament Performance)
 
 ## What It Does
 SBC (Sports Betting Companion) analyzes World Cup 2026 matches to identify value betting opportunities by comparing fair odds against sportsbook lines. The platform displays upcoming fixtures, calculates expected value (EV) and edge percentages, and provides a chatbot interface for querying betting information. Users can quickly scan high-value bets across different markets including moneylines, handicaps, totals, and prop bets.
