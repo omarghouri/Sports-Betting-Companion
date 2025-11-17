@@ -183,6 +183,8 @@ Our API connects to Supabase tables to implement business logic for a sports pre
 - GET /results – Retrieve match results
 - POST /results – Add or update a match result
 - GET /user_bets – Retrieve bets by user and type
+- GET /valuebets - Retrieves valuebets from Supabase
+- POST /valuebets - Posts the highest probability of success valuebets into frontend
 
 ## Key Business Rule
 Endpoint 1: get_teams()
