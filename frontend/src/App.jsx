@@ -13,12 +13,9 @@ function App() {
         {/* Left: High-Value Bets (World Cup) */}
         <ValueBetsPanel />
 
-        {/* Center: News Articles */}
-        <NewsFeed />
+        {/* Center: Chatbot */}
+        <ChatbotWidget />
       </main>
-
-      {/* Bottom-right: Chatbot */}
-      <ChatbotWidget />
     </div>
   );
 }
@@ -27,7 +24,7 @@ function App() {
 function Header() {
   return (
     <header style={styles.header} aria-label="Top navigation">
-      <div style={styles.brand}>SBC • World Cup 2026</div>
+      <div style={styles.brand}>Sports Betting Companion </div>
       <nav style={styles.nav}>
         <a style={styles.link} href="#">Log In</a>
         <a style={{ ...styles.link, ...styles.signup }} href="#">Sign Up</a>
@@ -111,40 +108,6 @@ function ValueBetsPanel() {
   );
 }
 
-//Mike Added News Feed
-
-
-function NewsFeed() {
-  const articles = [
-    {
-      id: 1,
-      title: "FIFA Finalizes 2026 Match Calendar Windows",
-      blurb: "Key venues across the U.S., Canada, and Mexico outlined; group-stage density optimized for recovery.",
-    },
-    {
-      id: 2,
-      title: "Roster Watch: Young Forwards in Form",
-      blurb: "USMNT and Brazil prospects surge ahead of camp selections; injuries could reshape depth charts.",
-    },
-    {
-      id: 3,
-      title: "Model Notes: Pace & Travel Adjustments",
-      blurb: "Altitude, travel corridors, and rest-day gaps added to expected-goals baselines for 2026.",
-    },
-  ];
-
-  return (
-    <section style={styles.newsSection} aria-label="World Cup News">
-      <h2 style={{ marginTop: 0 }}>News Articles</h2>
-      {articles.map(a => (
-        <article key={a.id} style={styles.newsCard}>
-          <h4 style={{ margin: "0 0 6px" }}>{a.title}</h4>
-          <p style={{ margin: 0, color: "#444" }}>{a.blurb}</p>
-        </article>
-      ))}
-    </section>
-  );
-}
 /* ----------------------- Chatbot Widget ----------------------- */
 function ChatbotWidget() {
   const [messages, setMessages] = useState([
@@ -160,7 +123,7 @@ function ChatbotWidget() {
   };
 
   return (
-    <div style={styles.chatbot} aria-label="Chatbot">
+    <section style={styles.chatbotSection} aria-label="Chatbot">
       <div style={styles.chatHeader}>SBC Chatbot</div>
       <div style={styles.chatBody}>
         {messages.map((m, i) => (
@@ -173,12 +136,13 @@ function ChatbotWidget() {
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
+          onKeyPress={e => e.key === 'Enter' && send()}
           placeholder="Ask about a match, market, or line…"
           style={styles.chatInput}
         />
         <button onClick={send} style={styles.chatSend}>Send</button>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -204,7 +168,7 @@ const styles = {
     zIndex: 10,
   },
   brand: { fontWeight: 700, letterSpacing: 0.4 },
-  nav: { display: "flex", gap: 12 },
+  nav: { display: "flex", gap: 12, alignItems: "center" },
   link: { color: "white", textDecoration: "none", fontWeight: 600 },
   signup: { padding: "6px 10px", background: "#1ea97c", borderRadius: 6 },
 
@@ -232,21 +196,21 @@ const styles = {
   gameMeta: { fontSize: 12, color: "#555" },
 
   main: {
-  flex: 1,
-  display: "grid",
-  gridTemplateColumns: "380px 1fr",  // Wider sidebar
-  gap: 16,
-  padding: 16,
-},
+    flex: 1,
+    display: "grid",
+    gridTemplateColumns: "380px 1fr",  // Wider sidebar
+    gap: 16,
+    padding: 16,
+  },
 
-sidebar: {
-  background: "white",
-  border: "1px solid #e6e7ee",
-  borderRadius: 12,
-  padding: 12,
-  height: "fit-content",
-  overflowX: "auto",  // Scroll if still needed
-},
+  sidebar: {
+    background: "white",
+    border: "1px solid #e6e7ee",
+    borderRadius: 12,
+    padding: 12,
+    height: "fit-content",
+    overflowX: "auto",  // Scroll if still needed
+  },
   sidebarTitle: { margin: "0 0 10px", fontSize: 16, fontWeight: 700,},
   table: {
     width: "100%",
@@ -257,76 +221,62 @@ sidebar: {
   td: { padding: "8px 6px", borderBottom: "1px solid #f3f4f7" },
   row: { background: "white" },
 
-  /* News */
-  newsSection: {
+  /* Chatbot - Now as main section */
+  chatbotSection: {
     background: "white",
     border: "1px solid #e6e7ee",
     borderRadius: 12,
-    padding: 16,
-    minHeight: 420,
-  },
-  newsCard: {
-    background: "#fbfcff",
-    border: "1px solid #edf0f7",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-  },
-
-  /* Chatbot */
-  chatbot: {
-    position: "fixed",
-    right: 18,
-    bottom: 18,
-    width: 340,
-    maxWidth: "90vw",
-    background: "white",
-    border: "1px solid #e6e7ee",
-    borderRadius: 14,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    zIndex: 20,
+    height: "fit-content",
+    minHeight: "500px",
   },
   chatHeader: {
     background: "#0b1020",
     color: "white",
-    padding: "10px 12px",
+    padding: "12px 16px",
     fontWeight: 700,
-    fontSize: 14,
+    fontSize: 16,
   },
   chatBody: {
-    padding: 12,
-    height: 220,
+    padding: 16,
+    flex: 1,
+    minHeight: "400px",
     overflowY: "auto",
     background: "#f7f8fc",
   },
   chatMsg: {
-    padding: "8px 10px",
+    padding: "10px 12px",
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 10,
     maxWidth: "85%",
-    lineHeight: 1.3,
-    fontSize: 13,
+    lineHeight: 1.4,
+    fontSize: 14,
   },
   msgUser: { background: "#dff7ee", marginLeft: "auto" },
   msgBot: { background: "white", border: "1px solid #edf0f7" },
-  chatInputRow: { display: "flex", gap: 8, padding: 10, borderTop: "1px solid #edf0f7" },
+  chatInputRow: { 
+    display: "flex", 
+    gap: 10, 
+    padding: 16, 
+    borderTop: "1px solid #edf0f7",
+    background: "white",
+  },
   chatInput: {
     flex: 1,
     border: "1px solid #d9dce6",
     borderRadius: 8,
-    padding: "8px 10px",
+    padding: "10px 12px",
     outline: "none",
+    fontSize: 14,
   },
   chatSend: {
     border: "none",
     background: "#1ea97c",
     color: "white",
     fontWeight: 700,
-    padding: "8px 12px",
+    padding: "10px 16px",
     borderRadius: 8,
     cursor: "pointer",
   },

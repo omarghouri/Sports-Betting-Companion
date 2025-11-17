@@ -15,3 +15,8 @@ export async function fetchUserBets(betType = "team_winner") {
   }
   return res.json(); // { user_id, bet_type, bets: [...] }
 }
+export async function fetchUpcomingMatches() {
+  const res = await fetch(`${API_BASE}/matches?status=upcoming`);
+  if (!res.ok) throw new Error("Failed to fetch matches");
+  return res.json();
+}
