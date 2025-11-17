@@ -179,6 +179,14 @@ function ChatbotWidget() {
   ]);
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const chatBodyRef = React.useRef(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const processQuery = async (query) => {
     const lowerQuery = query.toLowerCase();
@@ -363,7 +371,7 @@ function ChatbotWidget() {
   return (
     <section style={styles.chatbotSection} aria-label="Chatbot">
       <div style={styles.chatHeader}>SBC Chatbot</div>
-      <div style={styles.chatBody}>
+      <div ref={chatBodyRef} style={styles.chatBody}>
         {messages.map((m, i) => (
           <div key={i} style={{ ...styles.chatMsg, ...(m.role === "user" ? styles.msgUser : styles.msgBot) }}>
             {m.text.split('\n').map((line, j) => (
@@ -472,7 +480,7 @@ const styles = {
   td: { padding: "8px 6px", borderBottom: "1px solid #f3f4f7" },
   row: { background: "white" },
 
-  /* Chatbot */
+  /* Chatbot - Now as main section */
   chatbotSection: {
     background: "white",
     border: "1px solid #e6e7ee",
@@ -480,8 +488,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    height: "fit-content",
-    minHeight: "500px",
+    height: "600px",  // Fixed height instead of fit-content
   },
   chatHeader: {
     background: "#0b1020",
@@ -489,13 +496,15 @@ const styles = {
     padding: "12px 16px",
     fontWeight: 700,
     fontSize: 16,
+    flexShrink: 0,  // Prevent header from shrinking
   },
   chatBody: {
     padding: 16,
     flex: 1,
-    minHeight: "400px",
-    overflowY: "auto",
+    overflowY: "auto",  // Enable scrolling
     background: "#f7f8fc",
+    display: "flex",
+    flexDirection: "column",
   },
   chatMsg: {
     padding: "10px 12px",
@@ -504,6 +513,7 @@ const styles = {
     maxWidth: "85%",
     lineHeight: 1.4,
     fontSize: 14,
+    whiteSpace: "pre-line",
   },
   msgUser: { background: "#dff7ee", marginLeft: "auto" },
   msgBot: { background: "white", border: "1px solid #edf0f7" },
@@ -513,6 +523,7 @@ const styles = {
     padding: 16, 
     borderTop: "1px solid #edf0f7",
     background: "white",
+    flexShrink: 0,  // Prevent input row from shrinking
   },
   chatInput: {
     flex: 1,
@@ -536,4 +547,4 @@ const styles = {
   "@media (max-width: 900px)": {},
 };
 
-  export default App; 
+export default App;
