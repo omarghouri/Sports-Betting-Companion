@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { fetchValueBets } from "./api";
+import { fetchValueBets, fetchMatchCards } from "./api";
 
 
 function App() {
@@ -37,27 +37,72 @@ function Header() {
 
 /* ------------------- Upcoming Games Bar ------------------- */
 function UpcomingGamesBar() {
-  // Placeholder fixtures for WC 2026 (dates approximate)
-  const games = [
-    { id: 1, when: "2026-06-11 20:00", city: "Mexico City", teams: "MEX vs NZL", line: "MEX -0.5", total: "2.5" },
-    { id: 2, when: "2026-06-12 19:00", city: "Los Angeles", teams: "USA vs JAM", line: "USA -1.0", total: "2.75" },
-    { id: 3, when: "2026-06-13 18:00", city: "Toronto", teams: "CAN vs KOR", line: "PK", total: "2.25" },
-    { id: 4, when: "2026-06-14 17:00", city: "Dallas", teams: "BRA vs NOR", line: "BRA -1.25", total: "3.0" },
-    { id: 5, when: "2026-06-15 16:00", city: "New York", teams: "ENG vs SEN", line: "ENG -0.75", total: "2.25" },
-  ];
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchMatchCards()
+      .then((data) => {
+        // Filter for upcoming matches only
+        const upcomingMatches = data.filter(m => m.status === "upcoming");
+        setMatches(upcomingMatches);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError("Failed to load matches.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <section aria-label="Upcoming games" style={styles.gamesBar}>
+        <h3 style={styles.sectionLabel}>Upcoming World Cup Matches</h3>
+        <div style={styles.gamesScroller}>Loading matches...</div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section aria-label="Upcoming games" style={styles.gamesBar}>
+        <h3 style={styles.sectionLabel}>Upcoming World Cup Matches</h3>
+        <div style={styles.gamesScroller}>
+          <div style={{ color: '#d00' }}>{error}</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (matches.length === 0) {
+    return (
+      <section aria-label="Upcoming games" style={styles.gamesBar}>
+        <h3 style={styles.sectionLabel}>Upcoming World Cup Matches</h3>
+        <div style={styles.gamesScroller}>No upcoming matches scheduled.</div>
+      </section>
+    );
+  }
 
   return (
     <section aria-label="Upcoming games" style={styles.gamesBar}>
       <h3 style={styles.sectionLabel}>Upcoming World Cup Matches</h3>
       <div style={styles.gamesScroller}>
-        {games.map(g => (
-          <div key={g.id} style={styles.gameChip} title={`${g.teams} • ${g.city}`}>
-            <div style={styles.gameTeams}>{g.teams}</div>
-            <div style={styles.gameMeta}>{g.city}</div>
-            <div style={styles.gameMeta}>{g.when}</div>
-            <div style={styles.gameMeta}>{g.line} • o/u {g.total}</div>
-          </div>
-        ))}
+        {matches.map(match => {
+          // Format the date
+          const matchDate = new Date(match.match_date);
+          const dateStr = matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          const timeStr = matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          
+          return (
+            <div key={match.match_id} style={styles.gameChip}>
+              <div style={styles.gameTeams}>{match.team1} vs {match.team2}</div>
+              <div style={styles.gameMeta}>{match.venue || 'TBD'}</div>
+              <div style={styles.gameMeta}>{dateStr} • {timeStr}</div>
+              <div style={styles.gameMeta}>{match.stage || 'Group Stage'}</div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -304,4 +349,4 @@ const styles = {
   "@media (max-width: 900px)": {},
 };
 
-export default App;
+  export default App;

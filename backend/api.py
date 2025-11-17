@@ -42,6 +42,17 @@ def get_teams():
     except Exception as e:
         raise HTTPException(status_code=400, detail = "Team not in Tournament Database")
 
+@app.get("/match_cards")
+def get_match_cards():
+    """
+    Get all match cards with team names, dates, venues, and scores.
+    Returns data from the match_cards table which has pre-formatted match information.
+    """
+    try:
+        result = supabase.table("match_cards").select("*").execute()
+        return result.data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Unable to retrieve match cards")
 
 @app.get("/matches")
 def get_matches():
