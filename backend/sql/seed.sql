@@ -1,0 +1,1 @@
+INSERT INTO "public"."users" ("id", "username", "email", "password_hash", "balance", "created_at") VALUES ('5648b0c5-612b-4fc7-8ba3-84bd9657b3c4', 'sara_99', 'sara@example.com', 'hashed_pw_456', '50.00', '2025-10-06 01:26:07.667525+00'), ('72bc899c-f4fc-4712-8833-72c957074ad9', 'john_doe', 'john@example.com', 'hashed_pw_123', '100.00', '2025-10-06 01:26:07.667525+00');
