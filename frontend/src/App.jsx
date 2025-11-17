@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { fetchValueBets, fetchMatchCards } from "./api";
+import { 
+  fetchValueBets, 
+  fetchMatchCards, 
+  fetchTeams,
+  fetchMatches,
+  fetchPicks,
+  fetchResults,
+  fetchUserBets 
+} from "./api";
 
 
 function App() {
@@ -175,7 +183,7 @@ function ValueBetsPanel() {
 /* ----------------------- Chatbot Widget ----------------------- */
 function ChatbotWidget() {
   const [messages, setMessages] = useState([
-    { role: "bot", text: "Hey! Ask me about matches, teams, value bets, or odds for World Cup 2026." },
+    { role: "bot", text: "Hey! I can help you with matches, teams, bets, results, and more. Try asking:\n• 'Show all teams'\n• 'Argentina matches'\n• 'Best value bets'\n• 'Show results'\n• 'Highest scoring games'" },
   ]);
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -191,7 +199,34 @@ function ChatbotWidget() {
   const processQuery = async (query) => {
     const lowerQuery = query.toLowerCase();
     
-    // Pattern 1: Matches with a specific team
+    // Pattern 1: Show all teams 
+    if (lowerQuery.includes("all teams") || lowerQuery.includes("list teams") || lowerQuery.includes("show teams") || lowerQuery === "teams") {
+      try {
+        console.log("Attempting to fetch teams...");
+        const teams = await fetchTeams();
+        console.log("Teams received:", teams);
+        
+        if (!teams || teams.length === 0) {
+          return "No teams found in the database.";
+        }
+
+        let response = `Here are all ${teams.length} teams:\n\n`;
+        teams.forEach((team, idx) => {
+          // Handle different possible field names from your schema
+          const teamName = team.name || team.team_name || `Team ${team.id}`;
+          const groupInfo = team.group_name ? ` (Group ${team.group_name})` : '';
+          const countryCode = team.country_code ? ` [${team.country_code}]` : '';
+          response += `${idx + 1}. ${teamName}${countryCode}${groupInfo}\n`;
+        });
+
+        return response;
+      } catch (error) {
+        console.error("Error fetching teams:", error);
+        return `Sorry, I had trouble fetching teams: ${error.message}`;
+      }
+    }
+    
+    // Pattern 2: Matches with a specific team
     if (lowerQuery.includes("matches") || lowerQuery.includes("games") || lowerQuery.includes("fixtures")) {
       // Extract team name - look for common patterns
       let teamName = null;
@@ -240,7 +275,7 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 2: Value bets query
+    // Pattern 3: Value bets query
     if (lowerQuery.includes("value bet") || lowerQuery.includes("best bet") || lowerQuery.includes("edge")) {
       try {
         const valueBets = await fetchValueBets();
@@ -269,7 +304,7 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 3: Upcoming matches
+    // Pattern 4: Upcoming matches
     if (lowerQuery.includes("upcoming") || lowerQuery.includes("next") || lowerQuery.includes("schedule")) {
       try {
         const matches = await fetchMatchCards();
@@ -299,7 +334,7 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 4: Team record/history
+    // Pattern 5: Team record/history
     if (lowerQuery.includes("record") || lowerQuery.includes("history") || lowerQuery.includes("past")) {
       const teamMatch = lowerQuery.match(/(?:record|history|past).*?(?:of|for)\s+([a-z]+)/);
       if (teamMatch) {
@@ -335,8 +370,139 @@ function ChatbotWidget() {
       }
     }
 
+    // Pattern 6: Finished/completed matches
+    if (lowerQuery.includes("finished") || lowerQuery.includes("completed") || lowerQuery.includes("results") || lowerQuery.includes("final matches")) {
+      try {
+        const results = await fetchResults();
+        
+        if (results.length === 0) {
+          return "No completed matches found.";
+        }
+
+        let response = `Here are the completed matches:\n\n`;
+        results.slice(0, 10).forEach(match => {
+          const date = new Date(match.match_date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          });
+          response += `• Match ${match.id}: ${match.score_team1}-${match.score_team2} - ${date} (${match.stage || 'N/A'})\n`;
+        });
+
+        if (results.length > 10) {
+          response += `\n...and ${results.length - 10} more matches`;
+        }
+
+        return response;
+      } catch (error) {
+        return "Sorry, I had trouble fetching results. Please try again.";
+      }
+    }
+
+    // Pattern 7: All picks/bets
+    if (lowerQuery.includes("all picks") || lowerQuery.includes("all bets") || lowerQuery.includes("show picks") || lowerQuery.includes("show bets")) {
+      try {
+        const picks = await fetchPicks();
+        
+        if (picks.length === 0) {
+          return "No picks/bets found in the system.";
+        }
+
+        let response = `Here are the recent picks (showing ${Math.min(picks.length, 10)}):\n\n`;
+        picks.slice(0, 10).forEach((pick, idx) => {
+          const amount = pick.amount ? `$${pick.amount}` : '';
+          const odds = pick.odds ? `@ ${pick.odds}` : '';
+          const result = pick.result ? `[${pick.result.toUpperCase()}]` : '[PENDING]';
+          response += `${idx + 1}. Match ${pick.match_id}: ${pick.bet_type} on ${pick.bet_on} ${odds} ${amount} ${result}\n`;
+        });
+
+        if (picks.length > 10) {
+          response += `\n...and ${picks.length - 10} more picks`;
+        }
+
+        return response;
+      } catch (error) {
+        return "Sorry, I had trouble fetching picks. Please try again.";
+      }
+    }
+
+    // Pattern 8: User-specific bets
+    if (lowerQuery.includes("my bets") || lowerQuery.includes("user bets")) {
+      return "To view user-specific bets, please provide your user ID. For example: 'show bets for user [user-id] type moneyline'";
+    }
+
+    // Pattern 9: High-scoring matches
+    if (lowerQuery.includes("high scoring") || lowerQuery.includes("most goals") || lowerQuery.includes("highest score")) {
+      try {
+        const matches = await fetchMatchCards();
+        const finishedMatches = matches.filter(m => m.status === "finished" && m.score_team1 !== null);
+        
+        if (finishedMatches.length === 0) {
+          return "No finished matches with scores found.";
+        }
+
+        const sortedByGoals = finishedMatches
+          .map(m => ({ ...m, totalGoals: m.score_team1 + m.score_team2 }))
+          .sort((a, b) => b.totalGoals - a.totalGoals)
+          .slice(0, 5);
+
+        let response = "Here are the highest-scoring matches:\n\n";
+        sortedByGoals.forEach((match, idx) => {
+          const date = new Date(match.match_date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          });
+          response += `${idx + 1}. ${match.team1} ${match.score_team1}-${match.score_team2} ${match.team2} (${match.totalGoals} goals) - ${date}\n`;
+        });
+
+        return response;
+      } catch (error) {
+        return "Sorry, I had trouble fetching match data. Please try again.";
+      }
+    }
+
+    // Pattern 10: Match stages
+    if (lowerQuery.includes("stage") || lowerQuery.includes("round") || lowerQuery.includes("knockout") || lowerQuery.includes("group stage")) {
+      let stageFilter = null;
+      if (lowerQuery.includes("final")) stageFilter = "Final";
+      else if (lowerQuery.includes("semi")) stageFilter = "Semifinals";
+      else if (lowerQuery.includes("quarter")) stageFilter = "Quarterfinals";
+      else if (lowerQuery.includes("round of 16") || lowerQuery.includes("ro16")) stageFilter = "Round of 16";
+      else if (lowerQuery.includes("group")) stageFilter = "Group Stage";
+
+      if (stageFilter) {
+        try {
+          const matches = await fetchMatchCards();
+          const stageMatches = matches.filter(m => 
+            m.stage && m.stage.toLowerCase().includes(stageFilter.toLowerCase())
+          );
+
+          if (stageMatches.length === 0) {
+            return `No matches found for ${stageFilter}.`;
+          }
+
+          let response = `Matches in ${stageFilter}:\n\n`;
+          stageMatches.forEach(match => {
+            const date = new Date(match.match_date).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric' 
+            });
+            const score = match.score_team1 !== null 
+              ? ` (${match.score_team1}-${match.score_team2})`
+              : '';
+            response += `• ${match.team1} vs ${match.team2}${score} - ${date}\n`;
+          });
+
+          return response;
+        } catch (error) {
+          return "Sorry, I had trouble fetching matches by stage. Please try again.";
+        }
+      }
+    }
+
     // Default response
-    return "I can help you with:\n• Finding matches for a specific team (e.g., 'show me Argentina matches')\n• Showing value bets (e.g., 'what are the best bets?')\n• Listing upcoming matches (e.g., 'what games are coming up?')\n• Team records (e.g., 'what's France's record?')";
+    return "I can help you with:\n• Finding matches for a specific team (e.g., 'show me Argentina matches')\n• Showing value bets (e.g., 'what are the best bets?')\n• Listing upcoming matches (e.g., 'what games are coming up?')\n• Team records (e.g., 'what's France's record?')\n• Listing all teams (e.g., 'show all teams')\n• Showing finished matches (e.g., 'show results')\n• Viewing all picks (e.g., 'show all picks')\n• High-scoring matches (e.g., 'highest scoring games')\n• Matches by stage (e.g., 'show finals' or 'group stage matches')";
   };
 
   const send = async () => {
