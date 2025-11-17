@@ -230,8 +230,8 @@ Endpoint 5: get_user_bets()
 # Frontend Components
 
 ## Team & Contributions
-- **Linus**: Remade connections from endpoints to frontend
-- **Omar Ghouri**: Organized repository structure
+- **Linus**: Created new endpoints on back end to connect to the UI
+- **Omar Ghouri**: Organized repository structure / created api.js to manage requests from frontend to backend
 - **Bouanani Idrissi Oumaima**: 
 - **Mike D'Auria**: Remade API endpoints and Supbase Tables to reflect the information included in the frontend(valuebets and Team Tournament Performance)
 
