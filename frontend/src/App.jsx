@@ -53,7 +53,7 @@ function UpcomingGamesBar() {
     fetchMatchCards()
       .then((data) => {
         // Filter for upcoming matches only
-        const upcomingMatches = data.filter(m => m.status === "upcoming");
+        const upcomingMatches = data.filter(m => m.status === "upcoming" || m.status === "finished");
         setMatches(upcomingMatches);
       })
       .catch((err) => {
@@ -66,7 +66,7 @@ function UpcomingGamesBar() {
   if (loading) {
     return (
       <section aria-label="Upcoming games" style={styles.gamesBar}>
-        <h3 style={styles.sectionLabel}>Upcoming World Cup Matches</h3>
+        <h3 style={styles.sectionLabel}>Upcoming and Recent World Cup Matches</h3>
         <div style={styles.gamesScroller}>Loading matches...</div>
       </section>
     );
@@ -75,7 +75,7 @@ function UpcomingGamesBar() {
   if (error) {
     return (
       <section aria-label="Upcoming games" style={styles.gamesBar}>
-        <h3 style={styles.sectionLabel}>Upcoming World Cup Matches</h3>
+        <h3 style={styles.sectionLabel}>Upcoming and Recent World Cup Matches</h3>
         <div style={styles.gamesScroller}>
           <div style={{ color: '#d00' }}>{error}</div>
         </div>
@@ -86,7 +86,7 @@ function UpcomingGamesBar() {
   if (matches.length === 0) {
     return (
       <section aria-label="Upcoming games" style={styles.gamesBar}>
-        <h3 style={styles.sectionLabel}>Upcoming World Cup Matches</h3>
+        <h3 style={styles.sectionLabel}>Upcoming and Recent World Cup Matches</h3>
         <div style={styles.gamesScroller}>No upcoming matches scheduled.</div>
       </section>
     );
@@ -94,7 +94,7 @@ function UpcomingGamesBar() {
 
   return (
     <section aria-label="Upcoming games" style={styles.gamesBar}>
-      <h3 style={styles.sectionLabel}>Upcoming World Cup Matches</h3>
+      <h3 style={styles.sectionLabel}>Upcoming and Recent World Cup Matches</h3>
       <div style={styles.gamesScroller}>
         {matches.map(match => {
           // Format the date
@@ -199,7 +199,7 @@ function ChatbotWidget() {
   const processQuery = async (query) => {
     const lowerQuery = query.toLowerCase();
     
-    // Pattern 1: Show all teams 
+    // Pattern 1: Show all teams (MUST come before team matches pattern!)
     if (lowerQuery.includes("all teams") || lowerQuery.includes("list teams") || lowerQuery.includes("show teams") || lowerQuery === "teams") {
       try {
         console.log("Attempting to fetch teams...");
@@ -226,7 +226,38 @@ function ChatbotWidget() {
       }
     }
     
-    // Pattern 2: Matches with a specific team
+    // Pattern 2: High-scoring matches (MUST come before team matches pattern!)
+    if (lowerQuery.includes("high scoring") || lowerQuery.includes("most goals") || lowerQuery.includes("highest score")) {
+      try {
+        const matches = await fetchMatchCards();
+        const finishedMatches = matches.filter(m => m.status === "finished" && m.score_team1 !== null);
+        
+        if (finishedMatches.length === 0) {
+          return "No finished matches with scores found.";
+        }
+
+        const sortedByGoals = finishedMatches
+          .map(m => ({ ...m, totalGoals: m.score_team1 + m.score_team2 }))
+          .sort((a, b) => b.totalGoals - a.totalGoals)
+          .slice(0, 5);
+
+        let response = "Here are the highest-scoring matches:\n\n";
+        sortedByGoals.forEach((match, idx) => {
+          const date = new Date(match.match_date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          });
+          response += `${idx + 1}. ${match.team1} ${match.score_team1}-${match.score_team2} ${match.team2} (${match.totalGoals} goals) - ${date}\n`;
+        });
+
+        return response;
+      } catch (error) {
+        return "Sorry, I had trouble fetching match data. Please try again.";
+      }
+    }
+    
+    // Pattern 3: Matches with a specific team
     if (lowerQuery.includes("matches") || lowerQuery.includes("games") || lowerQuery.includes("fixtures")) {
       // Extract team name - look for common patterns
       let teamName = null;
@@ -275,7 +306,7 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 3: Value bets query
+    // Pattern 4: Value bets query
     if (lowerQuery.includes("value bet") || lowerQuery.includes("best bet") || lowerQuery.includes("edge")) {
       try {
         const valueBets = await fetchValueBets();
@@ -304,7 +335,7 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 4: Upcoming matches
+    // Pattern 5: Upcoming matches
     if (lowerQuery.includes("upcoming") || lowerQuery.includes("next") || lowerQuery.includes("schedule")) {
       try {
         const matches = await fetchMatchCards();
@@ -334,7 +365,7 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 5: Team record/history
+    // Pattern 6: Team record/history
     if (lowerQuery.includes("record") || lowerQuery.includes("history") || lowerQuery.includes("past")) {
       const teamMatch = lowerQuery.match(/(?:record|history|past).*?(?:of|for)\s+([a-z]+)/);
       if (teamMatch) {
@@ -370,7 +401,7 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 6: Finished/completed matches
+    // Pattern 7: Finished/completed matches
     if (lowerQuery.includes("finished") || lowerQuery.includes("completed") || lowerQuery.includes("results") || lowerQuery.includes("final matches")) {
       try {
         const results = await fetchResults();
@@ -399,7 +430,7 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 7: All picks/bets
+    // Pattern 8: All picks/bets
     if (lowerQuery.includes("all picks") || lowerQuery.includes("all bets") || lowerQuery.includes("show picks") || lowerQuery.includes("show bets")) {
       try {
         const picks = await fetchPicks();
@@ -426,40 +457,9 @@ function ChatbotWidget() {
       }
     }
 
-    // Pattern 8: User-specific bets
+    // Pattern 9: User-specific bets
     if (lowerQuery.includes("my bets") || lowerQuery.includes("user bets")) {
       return "To view user-specific bets, please provide your user ID. For example: 'show bets for user [user-id] type moneyline'";
-    }
-
-    // Pattern 9: High-scoring matches
-    if (lowerQuery.includes("high scoring") || lowerQuery.includes("most goals") || lowerQuery.includes("highest score")) {
-      try {
-        const matches = await fetchMatchCards();
-        const finishedMatches = matches.filter(m => m.status === "finished" && m.score_team1 !== null);
-        
-        if (finishedMatches.length === 0) {
-          return "No finished matches with scores found.";
-        }
-
-        const sortedByGoals = finishedMatches
-          .map(m => ({ ...m, totalGoals: m.score_team1 + m.score_team2 }))
-          .sort((a, b) => b.totalGoals - a.totalGoals)
-          .slice(0, 5);
-
-        let response = "Here are the highest-scoring matches:\n\n";
-        sortedByGoals.forEach((match, idx) => {
-          const date = new Date(match.match_date).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-          });
-          response += `${idx + 1}. ${match.team1} ${match.score_team1}-${match.score_team2} ${match.team2} (${match.totalGoals} goals) - ${date}\n`;
-        });
-
-        return response;
-      } catch (error) {
-        return "Sorry, I had trouble fetching match data. Please try again.";
-      }
     }
 
     // Pattern 10: Match stages
