@@ -654,7 +654,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    height: "600px",  // Fixed height instead of fit-content
+    height: "498px",  // Fixed height instead of fit-content
   },
   chatHeader: {
     background: "#0b1020",
