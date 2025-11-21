@@ -550,7 +550,7 @@ function ChatbotWidget() {
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
-          onKeyPress={e => e.key === 'Enter' && send()}
+          onKeyUp={e => e.key === 'Enter' && send()}
           placeholder="Ask about a match, team, or bet…"
           style={styles.chatInput}
           disabled={isProcessing}
