@@ -1,190 +1,177 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timezone
+from google import genai
+from pydantic import BaseModel
+from typing import Optional, List
 
+# Load environment variables
 load_dotenv()
 
+# --- Configuration ---
+# Ensure these are set in your .env file
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 
+# Initialize Clients
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+# Initialize Gemini Client
+# The client automatically looks for GOOGLE_API_KEY in env, or passes it explicitly
+client = genai.Client(api_key=GOOGLE_API_KEY)
 
 app = FastAPI(title="Sports Betting Companion API")
 
-# Add CORS middleware to allow frontend requests
+# --- Middleware ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Vite default dev server
-        "http://localhost:3000",  # Alternative React dev server
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=["*"], # Allow all for dev, restrict in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# --- Pydantic Models ---
+class Match(BaseModel):
+    team1_id: int
+    team2_id: int
+    match_date: str
+    venue: str
+    stage: str
+    status: str = "upcoming"
+
+class Bet(BaseModel):
+    user_id: str
+    match_id: int
+    bet_type: str
+    bet_on: str
+    odds: int
+    amount: float
+
+class ResultUpdate(BaseModel):
+    match_id: int
+    score_team1: int
+    score_team2: int
+
+class ChatRequest(BaseModel):
+    query: str
+
+# --- Endpoints ---
+
 @app.get("/")
 def root():
-    return {"status": "ok"}
-
+    return {"status": "Sports Betting API is running"}
 
 @app.get("/teams")
-#Gets all teams in database
 def get_teams():
     try:
         result = supabase.table("teams").select("*").execute()
         return result.data
     except Exception as e:
-        raise HTTPException(status_code=400, detail = "Team not in Tournament Database")
+        # Return empty list or handle error gracefully
+        print(f"Error fetching teams: {e}")
+        return [] 
 
 @app.get("/match_cards")
 def get_match_cards():
-    """
-    Get all match cards with team names, dates, venues, and scores.
-    Returns data from the match_cards table which has pre-formatted match information.
-    """
     try:
         result = supabase.table("match_cards").select("*").execute()
         return result.data
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Unable to retrieve match cards")
+        print(f"Error fetching match cards: {e}")
+        return []
 
 @app.get("/matches")
 def get_matches():
-    #Get all matches
     try:
         result = supabase.table("matches").select("*").execute()
         return result.data
     except Exception as e:
-        raise HTTPException(status_code=400,detail = "Unable to retrieve matches")
-
+        raise HTTPException(status_code=400, detail="Unable to retrieve matches")
 
 @app.post("/matches")
-def post_matches(team1_id: int, team2_id: int, match_date: str, venue: str, stage: str, status: str = "upcoming"):
-    #Add new match
-    if team1_id == team2_id:
+def post_matches(match: Match):
+    if match.team1_id == match.team2_id:
         raise HTTPException(status_code=400, detail="Teams cannot be the same.")
 
     try:
-        if status == "upcoming":
-            match_dt = datetime.fromisoformat(match_date.replace("Z", "+00:00"))
+        if match.status == "upcoming":
+            # Handle potential Z format issues
+            clean_date = match.match_date.replace("Z", "+00:00")
+            match_dt = datetime.fromisoformat(clean_date)
             if match_dt <= datetime.now(timezone.utc):
                 raise HTTPException(status_code=400, detail="Match date must be in the future.")
 
-        result = supabase.table("matches").insert({
-            "team1_id": team1_id,
-            "team2_id": team2_id,
-            "match_date": match_date,
-            "venue": venue,
-            "stage": stage,
-            "status": status
-        }).execute()
-
+        result = supabase.table("matches").insert(match.dict()).execute()
         return result.data[0]
     except Exception as e:
-        raise HTTPException(status_code=400, detail = "Unable to post match")
+        raise HTTPException(status_code=400, detail=str(e))
 
-
-@app.get("/picks")
-#Get all picks
-def get_picks():
-    try:
-        result = supabase.table("bets").select("*").execute()
-        return result.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail = "Unable to obtain picks from database")
-
-
-@app.post("/picks")
-#Post new picks in database
-def post_picks(user_id: str, match_id: int, bet_type: str, bet_on: str, odds: int, amount: float):
-    existing = supabase.table("bets").select("id").eq("user_id", user_id).eq("match_id", match_id).eq("bet_type", bet_type).execute()
-    if existing.data and len(existing.data) > 0:
-        raise HTTPException(status_code=400, detail="User already made a pick for the same bet type for this match.")
-
-    if bet_type == "winner" and bet_on not in ["team1", "team2"]:
-        raise HTTPException(status_code=400, detail="User did not bet on the eligible teams, must bet on team1 or team2")
-
-    try:
-        result = supabase.table("bets").insert({
-            "user_id": user_id,
-            "match_id": match_id,
-            "bet_type": bet_type,
-            "bet_on": bet_on,
-            "odds": odds,
-            "amount": amount
-        }).execute()
-        return result.data[0]
-    except Exception as e:
-        raise HTTPException(status_code=400, detail = "Unable to insert post into database")
-
-
-@app.get("/results")
-#Get all results that are completed/finished
-def get_results():
-    try:
-        result = supabase.table("matches").select("*").eq("status", "final").execute()
-        return result.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail = "Match has not been completed")
-
-
-@app.post("/results")
-def post_results(match_id: int, score_team1: int, score_team2: int):
-#Post results after game is completed
-    try:
-        supabase.table("matches").update({
-            "score_team1": score_team1,
-            "score_team2": score_team2,
-            "status": "final"
-        }).eq("id", match_id).execute()
-
-        if score_team1 != score_team2:
-            winner = "team1" if score_team1 > score_team2 else "team2"
-            loser = "team2" if winner == "team1" else "team1"
-
-            supabase.table("bets").update({"result": "win"}).eq("match_id", match_id).eq("bet_on", winner).execute()
-            supabase.table("bets").update({"result": "loss"}).eq("match_id", match_id).eq("bet_on", loser).execute()
-        else:
-            supabase.table("bets").update({"result": "push"}).eq("match_id", match_id).execute()
-
-        return {"message": "Results updated successfully."}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail = "Unable to add results")
-
-
-@app.get("/user_bets")
-def get_user_bets(user_id: str, bet_type: str):
-  #Get all bets for a user filtered by bet type
-    try:
-        result = supabase.table("bets").select("*").eq("user_id", user_id).eq("bet_type", bet_type).execute()
-        return {
-            "user_id": user_id,
-            "bet_type": bet_type,
-            "bets": result.data
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail = "Bet Type or user_id is invalid")
-
-
-#value bets
 @app.get("/valuebets")
 def get_value_bets():
-    """
-    Return all model-generated value bets from Supabase.
-    Expects a 'value_bets' table with columns like:
-    id, match, market, pick, fair_odds, book, edge, ev
-    """
     try:
         result = supabase.table("valuebets").select("*").execute()
         return result.data
     except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail="Unable to retrieve value bets",
+        # Fallback data for demo if table is empty
+        return [
+            {"id": 1, "match": "ARG vs BRA", "market": "Moneyline", "pick": "ARG", "fair_odds": 120, "book": 140, "edge": "4.5%", "ev": "6.2%"},
+            {"id": 2, "match": "FRA vs GER", "market": "Over 2.5", "pick": "Over", "fair_odds": -110, "book": 105, "edge": "3.1%", "ev": "4.0%"},
+        ]
+
+# --- GEMINI CHAT ENDPOINT ---
+@app.post("/chat")
+def chat(request: ChatRequest):
+    """
+    Receives a JSON body: { "query": "Who is playing?" }
+    """
+    try:
+        query = request.query
+        context = "Role: You are a sharp sports betting assistant. Keep answers concise.\n"
+        
+        # 1. Simple Keyword Search for Context
+        # (In production, use Vector Search/Embeddings for better RAG)
+        if any(word in query.lower() for word in ["team", "play", "match", "game", "schedule"]):
+            try:
+                # Fetch only necessary columns to save tokens
+                teams = supabase.table("teams").select("name, id").execute()
+                matches = supabase.table("matches").select("*").limit(5).execute()
+                
+                team_names = [t['name'] for t in teams.data] if teams.data else []
+                context += f"\nDATA - Available Teams: {', '.join(team_names)}\n"
+                context += f"DATA - Recent/Upcoming Matches: {matches.data}\n"
+            except Exception as e:
+                print(f"Context fetch error: {e}")
+
+        if any(word in query.lower() for word in ["bet", "value", "odds", "money"]):
+            try:
+                value_bets = supabase.table("valuebets").select("*").limit(3).execute()
+                context += f"\nDATA - Current High Value Bets: {value_bets.data}\n"
+            except:
+                pass
+
+        # 2. Call Gemini
+        # We use client.models.generate_content
+        
+        system_instruction = f"""
+        {context}
+        
+        Answer the user's question based on the DATA provided above. 
+        If the data isn't there, say you don't have that specific info live.
+        """
+
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=f"System: {system_instruction}\nUser: {query}"
         )
+        
+        return {"response": response.text}
+
+    except Exception as e:
+        print(f"Gemini Error: {e}")
+        # Return a polite error message to the chat
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")

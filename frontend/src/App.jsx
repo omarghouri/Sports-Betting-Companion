@@ -197,342 +197,52 @@ function ChatbotWidget() {
   }, [messages]);
 
   const processQuery = async (query) => {
-    const lowerQuery = query.toLowerCase();
+  try {
+    const res = await fetch('http://localhost:8000/chat', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query: query })
+    });
     
-    // Pattern 1: Show all teams (MUST come before team matches pattern!)
-    if (lowerQuery.includes("all teams") || lowerQuery.includes("list teams") || lowerQuery.includes("show teams") || lowerQuery === "teams") {
-      try {
-        console.log("Attempting to fetch teams...");
-        const teams = await fetchTeams();
-        console.log("Teams received:", teams);
-        
-        if (!teams || teams.length === 0) {
-          return "No teams found in the database.";
-        }
-
-        let response = `Here are all ${teams.length} teams:\n\n`;
-        teams.forEach((team, idx) => {
-          // Handle different possible field names from your schema
-          const teamName = team.name || team.team_name || `Team ${team.id}`;
-          const groupInfo = team.group_name ? ` (Group ${team.group_name})` : '';
-          const countryCode = team.country_code ? ` [${team.country_code}]` : '';
-          response += `${idx + 1}. ${teamName}${countryCode}${groupInfo}\n`;
-        });
-
-        return response;
-      } catch (error) {
-        console.error("Error fetching teams:", error);
-        return `Sorry, I had trouble fetching teams: ${error.message}`;
-      }
+    if (!res.ok) {
+      const errorData = await res.json();
+      console.error('API Error:', errorData);
+      throw new Error(`API error: ${res.status}`);
     }
     
-    // Pattern 2: High-scoring matches (MUST come before team matches pattern!)
-    if (lowerQuery.includes("high scoring") || lowerQuery.includes("most goals") || lowerQuery.includes("highest score")) {
-      try {
-        const matches = await fetchMatchCards();
-        const finishedMatches = matches.filter(m => m.status === "finished" && m.score_team1 !== null);
-        
-        if (finishedMatches.length === 0) {
-          return "No finished matches with scores found.";
-        }
-
-        const sortedByGoals = finishedMatches
-          .map(m => ({ ...m, totalGoals: m.score_team1 + m.score_team2 }))
-          .sort((a, b) => b.totalGoals - a.totalGoals)
-          .slice(0, 5);
-
-        let response = "Here are the highest-scoring matches:\n\n";
-        sortedByGoals.forEach((match, idx) => {
-          const date = new Date(match.match_date).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-          });
-          response += `${idx + 1}. ${match.team1} ${match.score_team1}-${match.score_team2} ${match.team2} (${match.totalGoals} goals) - ${date}\n`;
-        });
-
-        return response;
-      } catch (error) {
-        return "Sorry, I had trouble fetching match data. Please try again.";
-      }
-    }
-    
-    // Pattern 3: Matches with a specific team
-    if (lowerQuery.includes("matches") || lowerQuery.includes("games") || lowerQuery.includes("fixtures")) {
-      // Extract team name - look for common patterns
-      let teamName = null;
-      
-      // Pattern: "matches with [team]" or "games with [team]"
-      const withMatch = lowerQuery.match(/(?:matches|games|fixtures).*?(?:with|for|of)\s+([a-z]+)/);
-      if (withMatch) {
-        teamName = withMatch[1];
-      }
-      
-      // Pattern: "[team] matches" or "[team] games"
-      const teamFirstMatch = lowerQuery.match(/([a-z]+)\s+(?:matches|games|fixtures)/);
-      if (!teamName && teamFirstMatch) {
-        teamName = teamFirstMatch[1];
-      }
-
-      if (teamName) {
-        try {
-          const matches = await fetchMatchCards();
-          const teamMatches = matches.filter(m => 
-            m.team1.toLowerCase().includes(teamName) || 
-            m.team2.toLowerCase().includes(teamName)
-          );
-
-          if (teamMatches.length === 0) {
-            return `I couldn't find any matches for "${teamName}". Available teams include: Argentina, France, Brazil, England, Germany, and more.`;
-          }
-
-          let response = `Found ${teamMatches.length} match(es) involving ${teamName}:\n\n`;
-          teamMatches.forEach(match => {
-            const date = new Date(match.match_date).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric', 
-              year: 'numeric' 
-            });
-            const score = match.score_team1 !== null 
-              ? ` (${match.score_team1}-${match.score_team2})`
-              : '';
-            response += `• ${match.team1} vs ${match.team2}${score} - ${date} at ${match.venue} (${match.stage})\n`;
-          });
-
-          return response;
-        } catch (error) {
-          return "Sorry, I had trouble fetching match data. Please try again.";
-        }
-      }
-    }
-
-    // Pattern 4: Value bets query
-    if (lowerQuery.includes("value bet") || lowerQuery.includes("best bet") || lowerQuery.includes("edge")) {
-      try {
-        const valueBets = await fetchValueBets();
-        
-        if (valueBets.length === 0) {
-          return "No value bets available at the moment.";
-        }
-
-        // Get top 3 bets by edge
-        const topBets = valueBets
-          .sort((a, b) => parseFloat(b.edge || b.Edge || 0) - parseFloat(a.edge || a.Edge || 0))
-          .slice(0, 3);
-
-        let response = "Here are the top value bets right now:\n\n";
-        topBets.forEach((bet, idx) => {
-          const match = bet.match || bet.Match;
-          const market = bet.market || bet.Market;
-          const pick = bet.pick || bet.Pick;
-          const edge = bet.edge || bet.Edge;
-          response += `${idx + 1}. ${match} - ${market}: ${pick} (Edge: ${edge})\n`;
-        });
-
-        return response;
-      } catch (error) {
-        return "Sorry, I had trouble fetching value bets. Please try again.";
-      }
-    }
-
-    // Pattern 5: Upcoming matches
-    if (lowerQuery.includes("upcoming") || lowerQuery.includes("next") || lowerQuery.includes("schedule")) {
-      try {
-        const matches = await fetchMatchCards();
-        const upcoming = matches
-          .filter(m => m.status === "upcoming")
-          .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
-          .slice(0, 5);
-
-        if (upcoming.length === 0) {
-          return "No upcoming matches scheduled at the moment.";
-        }
-
-        let response = "Here are the next upcoming matches:\n\n";
-        upcoming.forEach(match => {
-          const date = new Date(match.match_date).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-          response += `• ${match.team1} vs ${match.team2} - ${date} at ${match.venue}\n`;
-        });
-
-        return response;
-      } catch (error) {
-        return "Sorry, I had trouble fetching upcoming matches. Please try again.";
-      }
-    }
-
-    // Pattern 6: Team record/history
-    if (lowerQuery.includes("record") || lowerQuery.includes("history") || lowerQuery.includes("past")) {
-      const teamMatch = lowerQuery.match(/(?:record|history|past).*?(?:of|for)\s+([a-z]+)/);
-      if (teamMatch) {
-        const teamName = teamMatch[1];
-        try {
-          const matches = await fetchMatchCards();
-          const teamMatches = matches.filter(m => 
-            (m.team1.toLowerCase().includes(teamName) || m.team2.toLowerCase().includes(teamName)) &&
-            m.status === "finished"
-          );
-
-          if (teamMatches.length === 0) {
-            return `No finished matches found for "${teamName}".`;
-          }
-
-          let wins = 0, losses = 0, draws = 0;
-          teamMatches.forEach(match => {
-            const isTeam1 = match.team1.toLowerCase().includes(teamName);
-            if (match.score_team1 === match.score_team2) {
-              draws++;
-            } else if ((isTeam1 && match.score_team1 > match.score_team2) || 
-                       (!isTeam1 && match.score_team2 > match.score_team1)) {
-              wins++;
-            } else {
-              losses++;
-            }
-          });
-
-          return `Record for ${teamName.charAt(0).toUpperCase() + teamName.slice(1)}: ${wins}W-${losses}L-${draws}D (${teamMatches.length} matches)`;
-        } catch (error) {
-          return "Sorry, I had trouble fetching team history. Please try again.";
-        }
-      }
-    }
-
-    // Pattern 7: Finished/completed matches
-    if (lowerQuery.includes("finished") || lowerQuery.includes("completed") || lowerQuery.includes("results") || lowerQuery.includes("final matches")) {
-      try {
-        const results = await fetchResults();
-        
-        if (results.length === 0) {
-          return "No completed matches found.";
-        }
-
-        let response = `Here are the completed matches:\n\n`;
-        results.slice(0, 10).forEach(match => {
-          const date = new Date(match.match_date).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-          });
-          response += `• Match ${match.id}: ${match.score_team1}-${match.score_team2} - ${date} (${match.stage || 'N/A'})\n`;
-        });
-
-        if (results.length > 10) {
-          response += `\n...and ${results.length - 10} more matches`;
-        }
-
-        return response;
-      } catch (error) {
-        return "Sorry, I had trouble fetching results. Please try again.";
-      }
-    }
-
-    // Pattern 8: All picks/bets
-    if (lowerQuery.includes("all picks") || lowerQuery.includes("all bets") || lowerQuery.includes("show picks") || lowerQuery.includes("show bets")) {
-      try {
-        const picks = await fetchPicks();
-        
-        if (picks.length === 0) {
-          return "No picks/bets found in the system.";
-        }
-
-        let response = `Here are the recent picks (showing ${Math.min(picks.length, 10)}):\n\n`;
-        picks.slice(0, 10).forEach((pick, idx) => {
-          const amount = pick.amount ? `$${pick.amount}` : '';
-          const odds = pick.odds ? `@ ${pick.odds}` : '';
-          const result = pick.result ? `[${pick.result.toUpperCase()}]` : '[PENDING]';
-          response += `${idx + 1}. Match ${pick.match_id}: ${pick.bet_type} on ${pick.bet_on} ${odds} ${amount} ${result}\n`;
-        });
-
-        if (picks.length > 10) {
-          response += `\n...and ${picks.length - 10} more picks`;
-        }
-
-        return response;
-      } catch (error) {
-        return "Sorry, I had trouble fetching picks. Please try again.";
-      }
-    }
-
-    // Pattern 9: User-specific bets
-    if (lowerQuery.includes("my bets") || lowerQuery.includes("user bets")) {
-      return "To view user-specific bets, please provide your user ID. For example: 'show bets for user [user-id] type moneyline'";
-    }
-
-    // Pattern 10: Match stages
-    if (lowerQuery.includes("stage") || lowerQuery.includes("round") || lowerQuery.includes("knockout") || lowerQuery.includes("group stage")) {
-      let stageFilter = null;
-      if (lowerQuery.includes("final")) stageFilter = "Final";
-      else if (lowerQuery.includes("semi")) stageFilter = "Semifinals";
-      else if (lowerQuery.includes("quarter")) stageFilter = "Quarterfinals";
-      else if (lowerQuery.includes("round of 16") || lowerQuery.includes("ro16")) stageFilter = "Round of 16";
-      else if (lowerQuery.includes("group")) stageFilter = "Group Stage";
-
-      if (stageFilter) {
-        try {
-          const matches = await fetchMatchCards();
-          const stageMatches = matches.filter(m => 
-            m.stage && m.stage.toLowerCase().includes(stageFilter.toLowerCase())
-          );
-
-          if (stageMatches.length === 0) {
-            return `No matches found for ${stageFilter}.`;
-          }
-
-          let response = `Matches in ${stageFilter}:\n\n`;
-          stageMatches.forEach(match => {
-            const date = new Date(match.match_date).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric' 
-            });
-            const score = match.score_team1 !== null 
-              ? ` (${match.score_team1}-${match.score_team2})`
-              : '';
-            response += `• ${match.team1} vs ${match.team2}${score} - ${date}\n`;
-          });
-
-          return response;
-        } catch (error) {
-          return "Sorry, I had trouble fetching matches by stage. Please try again.";
-        }
-      }
-    }
-
-    // Default response
-    return "I can help you with:\n• Finding matches for a specific team (e.g., 'show me Argentina matches')\n• Showing value bets (e.g., 'what are the best bets?')\n• Listing upcoming matches (e.g., 'what games are coming up?')\n• Team records (e.g., 'what's France's record?')\n• Listing all teams (e.g., 'show all teams')\n• Showing finished matches (e.g., 'show results')\n• Viewing all picks (e.g., 'show all picks')\n• High-scoring matches (e.g., 'highest scoring games')\n• Matches by stage (e.g., 'show finals' or 'group stage matches')";
-  };
-
+    const data = await res.json();
+    return data.response;
+  } catch (error) {
+    console.error('Full error:', error);
+    return "Sorry, I encountered an error. Please try again.";
+  }
+};
   const send = async () => {
-    const trimmed = input.trim();
-    if (!trimmed || isProcessing) return;
+  const trimmed = input.trim();
+  if (!trimmed || isProcessing) return;
 
-    setMessages(prev => [...prev, { role: "user", text: trimmed }]);
-    setInput("");
-    setIsProcessing(true);
+  setMessages(prev => [...prev, { role: "user", text: trimmed }]);
+  setInput("");
+  setIsProcessing(true);
+  setMessages(prev => [...prev, { role: "bot", text: "Thinking..." }]);
 
-    // Add a "thinking" message
-    setMessages(prev => [...prev, { role: "bot", text: "Looking that up..." }]);
-
-    try {
-      const response = await processQuery(trimmed);
-      
-      // Remove the "thinking" message and add the real response
-      setMessages(prev => {
-        const withoutThinking = prev.slice(0, -1);
-        return [...withoutThinking, { role: "bot", text: response }];
-      });
-    } catch (error) {
-      setMessages(prev => {
-        const withoutThinking = prev.slice(0, -1);
-        return [...withoutThinking, { role: "bot", text: "Sorry, something went wrong. Please try again." }];
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  try {
+    const response = await processQuery(trimmed);
+    setMessages(prev => {
+      const withoutThinking = prev.slice(0, -1);
+      return [...withoutThinking, { role: "bot", text: response }];
+    });
+  } catch (error) {
+    setMessages(prev => {
+      const withoutThinking = prev.slice(0, -1);
+      return [...withoutThinking, { role: "bot", text: "Sorry, something went wrong." }];
+    });
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   return (
     <section style={styles.chatbotSection} aria-label="Chatbot">
