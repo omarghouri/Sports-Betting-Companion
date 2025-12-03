@@ -71,7 +71,7 @@ function Header() {
       <div style={styles.headerInner}>
         <div style={styles.brandContainer}>
           <Icons.Trophy style={{ color: '#34d399', marginRight: '8px' }} />
-          <div style={styles.brandName}>BetCompanion</div>
+          <div style={styles.brandName}>Sports Betting Companion</div>
         </div>
         <nav style={styles.nav}>
           <a href="#" style={styles.navLink}>Log In</a>
@@ -191,7 +191,7 @@ function ValueBetsPanel() {
       <div style={styles.panelHeader}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Icons.TrendingUp style={{ width: '20px', height: '20px', color: '#10b981' }} />
-            <h3 style={styles.panelTitle}>Market Value Finder</h3>
+            <h3 style={styles.panelTitle}>Top Value Bets</h3>
         </div>
         <span style={styles.liveBadge}>Live Updates</span>
       </div>
