@@ -144,6 +144,36 @@ def post_matches(match: Match):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Server error: {str(e)}"
         )
+    
+# Odds Endpoints
+
+@app.get("/qualifying_odds", status_code=status.HTTP_200_OK)
+def get_qualifying_odds():
+    """Fetch all qualifying odds data."""
+    try:
+        # Fetch data from the 'qualifying_odds' table
+        result = supabase.table("qualifying_odds").select("*").execute()
+        return result.data if result.data else []
+    except Exception as e:
+        print(f"Database error fetching qualifying odds: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to fetch qualifying odds from database"
+        )
+
+@app.get("/outright_winning_odds", status_code=status.HTTP_200_OK)
+def get_outright_winning_odds():
+    """Fetch outright winning odds (e.g., tournament winners)."""
+    try:
+        # Fetch data from the 'outright_winning_odds' table
+        result = supabase.table("outright_winning_odds").select("*").execute()
+        return result.data if result.data else []
+    except Exception as e:
+        print(f"Database error fetching outright odds: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to fetch outright winning odds from database"
+        )
 
 @app.get("/valuebets", status_code=status.HTTP_200_OK)
 def get_value_bets():
@@ -204,6 +234,8 @@ def chat(request: ChatRequest):
         context = "Role: You are a sharp sports betting assistant. Keep answers concise and helpful.\n"
         
         # 1. Keyword-based context retrieval
+        
+        
         if any(word in query.lower() for word in ["team", "play", "match", "game", "schedule"]):
             try:
                 teams = supabase.table("teams").select("name, id").limit(20).execute()
@@ -216,16 +248,54 @@ def chat(request: ChatRequest):
                 if matches.data:
                     context += f"DATA - Recent/Upcoming Matches: {matches.data}\n"
             except Exception as db_error:
-                print(f"Context fetch error: {db_error}")
-                # Continue without this context
+                print(f"Context fetch error (matches): {db_error}")
 
-        if any(word in query.lower() for word in ["bet", "value", "odds", "money"]):
+        # keywords for value bets
+        if any(word in query.lower() for word in ["bet", "value", "ev", "edge"]):
             try:
                 value_bets = supabase.table("valuebets").select("*").limit(3).execute()
                 if value_bets.data:
                     context += f"\nDATA - Current High Value Bets: {value_bets.data}\n"
             except Exception as db_error:
                 print(f"Value bets fetch error: {db_error}")
+
+       # odds contexts 
+        if any(word in query.lower() for word in ["qualify", "outright", "win", "champion", "odds"]):
+            try:
+                # --- A. OUTRIGHT WINNER ODDS ---
+                all_win_odds = supabase.table("outright_winning_odds").select("*").limit(50).execute()
+                win_data = []
+                if all_win_odds.data:
+                    # Filter for specific team mentioned in query
+                    relevant_win = [
+                        row for row in all_win_odds.data 
+                        if str(row.get('team', '')).lower() in query.lower() 
+                        or str(row.get('country', '')).lower() in query.lower()
+                    ]
+                    # Use specific matches if found, else default to top 5
+                    win_data = relevant_win if relevant_win else all_win_odds.data[:5]
+
+                if win_data:
+                    context += f"\nDATA - Outright Winner Odds: {win_data}\n"
+
+                #  B. QUALIFYING ODDS 
+                all_qual_odds = supabase.table("qualifying_odds").select("*").limit(50).execute()
+                qual_data = []
+                if all_qual_odds.data:
+                    # Filter for specific team mentioned in query
+                    relevant_qual = [
+                        row for row in all_qual_odds.data
+                        if str(row.get('team', '')).lower() in query.lower()
+                        or str(row.get('country', '')).lower() in query.lower()
+                    ]
+                    # Use specific matches if found, else default to top 5
+                    qual_data = relevant_qual if relevant_qual else all_qual_odds.data[:5]
+
+                if qual_data:
+                    context += f"\nDATA - Qualification Odds: {qual_data}\n"
+
+            except Exception as db_error:
+                print(f"Odds fetch error: {db_error}")
 
         # 2. Call Gemini API
         system_instruction = f"""
@@ -262,7 +332,7 @@ def chat(request: ChatRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred processing your request"
         )
-
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
