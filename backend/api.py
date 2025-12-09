@@ -213,125 +213,163 @@ def get_value_bets():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to fetch value bets"
         )
+#stats endpointsto
+@app.get("/stats", status_code=status.HTTP_200_OK)
+def get_stats(category: str = "standard", team_id: Optional[int] = None):
+    """
+    Fetch raw stats from one of the 4 specific tables.
+    Categories: 'standard', 'shooting', 'passing', 'goalkeeping'
+    """
+    # Map simple category names to your exact Supabase table names
+    table_map = {
+        "standard": "2026 WC Quals Standard Stats",
+        "shooting": "2026 WC Quals Shooting Stats",
+        "passing": "2026 WC Quals Passing Stats",
+        "goalkeeping": "2026 WC Quals Goalkeeping Stats"
+    }
+    
+    table_name = table_map.get(category.lower())
+    
+    if not table_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Invalid category. Available: {', '.join(table_map.keys())}"
+        )
+
+    try:
+        query = supabase.table(table_name).select("*")
+        if team_id:
+            query = query.eq("team_id", team_id)
+        
+        result = query.execute()
+        return result.data if result.data else []
+    except Exception as e:
+        print(f"DB Error fetching {category} stats: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unable to fetch {category} stats"
+        )
+
+
+@app.get("/top_features", status_code=status.HTTP_200_OK)
+def get_top_features():
+    """
+    Fetch the list of most important features determined by the ML model.
+    """
+    try:
+        result = supabase.table("top_features").select("*").order("ranking", desc=False).execute()
+        return result.data if result.data else []
+    except Exception as e:
+        print(f"DB Error fetching features: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to fetch ML features"
+        )
 
 # --- GEMINI CHAT ENDPOINT ---
 @app.post("/chat", status_code=status.HTTP_200_OK)
 def chat(request: ChatRequest):
-    """
-    AI-powered chat endpoint that uses Gemini to answer betting questions.
-    Receives JSON: { "query": "Who is playing today?" }
-    Returns: { "response": "AI response text" }
-    """
     try:
-        query = request.query.strip()
-        
+        query = request.query.strip().lower()
         if not query:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Query cannot be empty"
-            )
+            raise HTTPException(status_code=400, detail="Query empty")
         
-        context = "Role: You are a sharp sports betting assistant. Keep answers concise and helpful.\n"
+        context = "Role: Sports betting assistant. Use the provided DATA to answer.\n"
         
-        # 1. Keyword-based context retrieval
-        
-        
-        if any(word in query.lower() for word in ["team", "play", "match", "game", "schedule"]):
+        # 1. Detect Teams
+        mentioned_team_ids = []
+        try:
+            all_teams = supabase.table("teams").select("id, name").execute()
+            if all_teams.data:
+                for team in all_teams.data:
+                    if team['name'].lower() in query:
+                        mentioned_team_ids.append(team['id'])
+                        context += f"Detected Team: {team['name']} (ID: {team['id']})\n"
+        except Exception as e:
+            print(f"Team lookup warning: {e}")
+
+        # 2. General Keywords
+        if any(w in query for w in ["match", "game", "vs", "play", "schedule"]):
             try:
-                teams = supabase.table("teams").select("name, id").limit(20).execute()
                 matches = supabase.table("matches").select("*").limit(5).execute()
-                
-                if teams.data:
-                    team_names = [t['name'] for t in teams.data]
-                    context += f"\nDATA - Available Teams: {', '.join(team_names)}\n"
-                
-                if matches.data:
-                    context += f"DATA - Recent/Upcoming Matches: {matches.data}\n"
-            except Exception as db_error:
-                print(f"Context fetch error (matches): {db_error}")
+                if matches.data: context += f"\nUpcoming Matches: {matches.data}\n"
+            except: pass
 
-        # keywords for value bets
-        if any(word in query.lower() for word in ["bet", "value", "ev", "edge"]):
+        if any(w in query for w in ["bet", "value", "odds", "money", "wager"]):
             try:
-                value_bets = supabase.table("valuebets").select("*").limit(3).execute()
-                if value_bets.data:
-                    context += f"\nDATA - Current High Value Bets: {value_bets.data}\n"
-            except Exception as db_error:
-                print(f"Value bets fetch error: {db_error}")
+                val_bets = supabase.table("valuebets").select("*").limit(3).execute()
+                if val_bets.data: context += f"\nTop Value Bets: {val_bets.data}\n"
+            except: pass
 
-       # odds contexts 
-        if any(word in query.lower() for word in ["qualify", "outright", "win", "champion", "odds"]):
+        # 3. Tournament/Winning/Qualifying Odds (RESTORED)
+        # Triggers on: qualify, outright, winner, champion, cup, tournament
+        odds_keywords = ["qualify", "outright", "winner", "champion", "tournament", "cup", "who will win"]
+        if any(w in query for w in odds_keywords):
             try:
-                # --- A. OUTRIGHT WINNER ODDS ---
-                all_win_odds = supabase.table("outright_winning_odds").select("*").limit(50).execute()
-                win_data = []
-                if all_win_odds.data:
-                    # Filter for specific team mentioned in query
-                    relevant_win = [
-                        row for row in all_win_odds.data 
-                        if str(row.get('team', '')).lower() in query.lower() 
-                        or str(row.get('country', '')).lower() in query.lower()
-                    ]
-                    # Use specific matches if found, else default to top 5
-                    win_data = relevant_win if relevant_win else all_win_odds.data[:5]
+                # Fetch Outright Winning Odds
+                outright = supabase.table("outright_winning_odds").select("*").limit(30).execute()
+                if outright.data:
+                    context += f"\nDATA - Outright Winning Odds: {outright.data}\n"
+                
+                # Fetch Qualifying Odds
+                qualifying = supabase.table("qualifying_odds").select("*").limit(10).execute()
+                if qualifying.data:
+                    context += f"\nDATA - Qualifying Odds: {qualifying.data}\n"
+            except Exception as e:
+                print(f"Odds fetch error: {e}")
 
-                if win_data:
-                    context += f"\nDATA - Outright Winner Odds: {win_data}\n"
+        # 4. Stats & Analysis
+        stat_triggers = ["stat", "shoot", "goal", "xg", "perform", "analysis", "win", "chance", "predict", "who"]
+        should_fetch_stats = any(w in query for w in stat_triggers) or len(mentioned_team_ids) > 0
 
-                #  B. QUALIFYING ODDS 
-                all_qual_odds = supabase.table("qualifying_odds").select("*").limit(50).execute()
-                qual_data = []
-                if all_qual_odds.data:
-                    # Filter for specific team mentioned in query
-                    relevant_qual = [
-                        row for row in all_qual_odds.data
-                        if str(row.get('team', '')).lower() in query.lower()
-                        or str(row.get('country', '')).lower() in query.lower()
-                    ]
-                    # Use specific matches if found, else default to top 5
-                    qual_data = relevant_qual if relevant_qual else all_qual_odds.data[:5]
+        if should_fetch_stats:
+            try:
+                # Top Features
+                top_feats = supabase.table("top_features").select("feature_name, ranking").order("ranking").limit(5).execute()
+                if top_feats.data:
+                    feats = [f"{f['feature_name']} (Rank #{f['ranking']})" for f in top_feats.data]
+                    context += f"\nDATA - Model's Top Predictive Stats: {', '.join(feats)}\n"
 
-                if qual_data:
-                    context += f"\nDATA - Qualification Odds: {qual_data}\n"
+                # Specific Team Stats
+                if mentioned_team_ids:
+                    for table in [
+                        "2026 WC Quals Standard Stats",
+                        "2026 WC Quals Shooting Stats",
+                        "2026 WC Quals Passing Stats", 
+                        "2026 WC Quals Goalkeeping Stats"
+                    ]:
+                        stats = supabase.table(table).select("*").in_("team_id", mentioned_team_ids).execute()
+                        if stats.data:
+                            context += f"\nDATA - {table} for mentioned teams: {stats.data}\n"
+            except Exception as e:
+                print(f"Stats fetch error: {e}")
 
-            except Exception as db_error:
-                print(f"Odds fetch error: {db_error}")
-
-        # 2. Call Gemini API
+        # 5. Generate Answer
         system_instruction = f"""
         {context}
         
-        Answer the user's question based on the DATA provided above. 
-        If specific data isn't available, provide general betting advice or explain what you'd need.
-        Be concise but helpful.
+        Answer based on the DATA provided.
+        1. If 'Top Predictive Stats' are listed, prioritize them for match analysis.
+        2. If specific stats for mentioned teams are found, compare them.
+        3. If asking about tournament winners or qualification, use the Outright/Qualifying Odds data.
         """
 
         try:
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
-                contents=f"System: {system_instruction}\n\nUser: {query}"
+                contents=f"System: {system_instruction}\n\nUser: {request.query}"
             )
-            
-            # Extract text from response
-            response_text = response.text if hasattr(response, 'text') else str(response)
-            
-            return {"response": response_text}
-        
-        except Exception as gemini_error:
-            print(f"Gemini API Error: {gemini_error}")
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="AI service temporarily unavailable"
-            )
+            return {"response": response.text}
+        except Exception as e:
+            print(f"Gemini Error: {e}")
+            raise HTTPException(status_code=503, detail="AI Service Unavailable")
 
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Unexpected chat error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred processing your request"
-        )
+        print(f"Unexpected Error: {e}")
+        raise HTTPException(status_code=500, detail="Processing failed")
+
     
 if __name__ == "__main__":
     import uvicorn
