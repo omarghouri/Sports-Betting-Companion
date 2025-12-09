@@ -1,7 +1,7 @@
 import React from "react";
 import "./App.css"; 
 
-// Import your separated components
+// Import components
 import Header from "./components/Header.jsx";
 import ValueBetsPanel from "./components/ValueBetsPanel.jsx";
 import UpcomingGamesSidebar from "./components/UpcomingGamesSidebar.jsx";
