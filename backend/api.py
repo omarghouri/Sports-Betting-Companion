@@ -276,14 +276,14 @@ def chat(request: ChatRequest):
         
         context = "Role: Sports betting assistant. Use the provided DATA to answer.\n"
         
-        # 1. Detect Teams
-        mentioned_team_ids = []
+        # 1. Detect Teams (Store names AND IDs)
+        mentioned_teams = [] # List of dicts: {'id': 1, 'name': 'Mexico'}
         try:
             all_teams = supabase.table("teams").select("id, name").execute()
             if all_teams.data:
                 for team in all_teams.data:
                     if team['name'].lower() in query:
-                        mentioned_team_ids.append(team['id'])
+                        mentioned_teams.append(team)
                         context += f"Detected Team: {team['name']} (ID: {team['id']})\n"
         except Exception as e:
             print(f"Team lookup warning: {e}")
@@ -301,63 +301,71 @@ def chat(request: ChatRequest):
                 if val_bets.data: context += f"\nTop Value Bets: {val_bets.data}\n"
             except: pass
 
-        # 3. Tournament/Winning/Qualifying Odds (RESTORED)
-        # Triggers on: qualify, outright, winner, champion, cup, tournament
-        odds_keywords = ["qualify", "outright", "winner", "champion", "tournament", "cup", "who will win"]
-        if any(w in query for w in odds_keywords):
+        if any(w in query for w in ["qualify", "outright", "winner", "champion", "tournament"]):
             try:
-                # Fetch Outright Winning Odds
-                outright = supabase.table("outright_winning_odds").select("*").limit(30).execute()
-                if outright.data:
-                    context += f"\nDATA - Outright Winning Odds: {outright.data}\n"
+                outright = supabase.table("outright_winning_odds").select("*").limit(100).execute()
+                if outright.data: context += f"\nOutright Odds: {outright.data}\n"
                 
-                # Fetch Qualifying Odds
-                qualifying = supabase.table("qualifying_odds").select("*").limit(10).execute()
-                if qualifying.data:
-                    context += f"\nDATA - Qualifying Odds: {qualifying.data}\n"
-            except Exception as e:
-                print(f"Odds fetch error: {e}")
+                qualify = supabase.table("qualifying_odds").select("*").limit(100).execute()
+                if qualify.data: context += f"\nQualifying Odds: {qualify.data}\n"
+            except: pass
 
-        # 4. Stats & Analysis
-        stat_triggers = ["stat", "shoot", "goal", "xg", "perform", "analysis", "win", "chance", "predict", "who"]
-        should_fetch_stats = any(w in query for w in stat_triggers) or len(mentioned_team_ids) > 0
+        # 3. Stats & Analysis (Updated for Robustness)
+        stat_triggers = ["stat", "shoot", "goal", "xg", "perform", "analysis", "win", "chance", "predict", "pass"]
+        should_fetch_stats = any(w in query for w in stat_triggers) or len(mentioned_teams) > 0
 
         if should_fetch_stats:
             try:
-                # Top Features
+                # A. Rankings
                 top_feats = supabase.table("top_features").select("feature_name, ranking").order("ranking").limit(5).execute()
                 if top_feats.data:
                     feats = [f"{f['feature_name']} (Rank #{f['ranking']})" for f in top_feats.data]
-                    context += f"\nDATA - Model's Top Predictive Stats: {', '.join(feats)}\n"
+                    context += f"\nModel's Top Predictive Stats: {', '.join(feats)}\n"
 
-                # Specific Team Stats
-                if mentioned_team_ids:
-                    for table in [
+                # B. Specific Team Stats (Double-Check Logic)
+                if mentioned_teams:
+                    tables = [
                         "2026 WC Quals Standard Stats",
                         "2026 WC Quals Shooting Stats",
                         "2026 WC Quals Passing Stats", 
                         "2026 WC Quals Goalkeeping Stats"
-                    ]:
-                        stats = supabase.table(table).select("*").in_("team_id", mentioned_team_ids).execute()
-                        if stats.data:
-                            context += f"\nDATA - {table} for mentioned teams: {stats.data}\n"
+                    ]
+                    
+                    for table in tables:
+                        # Attempt 1: Fetch by ID (Preferred)
+                        ids = [t['id'] for t in mentioned_teams]
+                        stats_res = supabase.table(table).select("*").in_("team_id", ids).execute()
+                        
+                        # Attempt 2: Fetch by Name (Fallback if IDs are missing in stats table)
+                        if not stats_res.data:
+                            names = [t['name'] for t in mentioned_teams]
+                            # Note: Supabase doesn't have an easy 'in_' for strings in all client versions, 
+                            # so we do a simple loop or single query if 1 team.
+                            # For robustness, we check 'Squad' column which usually holds the name.
+                            for name in names:
+                                name_res = supabase.table(table).select("*").eq("Squad", name).execute()
+                                if name_res.data:
+                                    context += f"\nDATA - {table} (Found by Name '{name}'): {name_res.data}\n"
+                        else:
+                            context += f"\nDATA - {table} (Found by ID): {stats_res.data}\n"
+
             except Exception as e:
                 print(f"Stats fetch error: {e}")
 
-        # 5. Generate Answer
+        # 4. Generate Answer
         system_instruction = f"""
         {context}
         
-        Answer based on the DATA provided.
-        1. If 'Top Predictive Stats' are listed, prioritize them for match analysis.
-        2. If specific stats for mentioned teams are found, compare them.
-        3. If asking about tournament winners or qualification, use the Outright/Qualifying Odds data.
+        Answer using the DATA provided.
+        1. If 'Top Predictive Stats' are listed, use them to prioritize your analysis.
+        2. Look for specific stats in the JSON data provided (e.g. 'Per 90 Gls', 'Cmp%').
+        3. If you found data via Name fallback, mention that you found the stats.
         """
 
         try:
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
-                contents=f"System: {system_instruction}\n\nUser: {request.query}"
+                contents=f"System: {system_instruction}\n\nUser: {query}"
             )
             return {"response": response.text}
         except Exception as e:
@@ -369,8 +377,8 @@ def chat(request: ChatRequest):
     except Exception as e:
         print(f"Unexpected Error: {e}")
         raise HTTPException(status_code=500, detail="Processing failed")
-
     
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
