@@ -10,8 +10,6 @@ export default function Header() {
           <div className="brand-name">Sports Betting Companion</div>
         </div>
         <nav className="nav">
-          <a href="#" className="nav-link">Log In</a>
-          <a href="#" className="nav-button">Sign Up</a>
         </nav>
       </div>
     </header>
