@@ -239,7 +239,7 @@ Endpoint 5: get_user_bets()
 ## Team & Contributions
 - **Linus**: Created new endpoints on back end to connect to the UI
 - **Omar Ghouri**: Organized repository structure / created api.js to manage requests from frontend to backend
-- **Bouanani Idrissi Oumaima**: 
+- **Bouanani Idrissi Oumaima**:Contributed to backend feature implementation, including refining API logic for bets, value bets, and match validation, participated in end-to-end testing to ensure the platform runs smoothly across backend, database, and frontend layers
 - **Mike D'Auria**: Remade API endpoints and Supbase Tables to reflect the information included in the frontend(valuebets and Team Tournament Performance)
 
 ## What It Does
