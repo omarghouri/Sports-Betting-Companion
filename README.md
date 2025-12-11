@@ -143,15 +143,17 @@ erDiagram
         cross_success_pct float4
         crosses_per_match float4
 
+    erDiagram
+        qualifying_odds ||--o{ team_performance : links
+        qualifying_odds ||--o{ wc_quals_standard_stats : links
+        qualifying_odds ||--o{ wc_quals_shooting_stats : links
+        qualifying_odds ||--o{ wc_quals_goalkeeping_stats : links
+        qualifying_odds ||--o{ wc_quals_passing_stats : links
 
-    USERS ||--o{ BETS : places
-    MATCHES ||--o{ BETS : contains
-    TEAMS ||--o{ PLAYERS : has
-    TEAMS ||--o{ MATCHES : team1
-    TEAMS ||--o{ MATCHES : team2
 
-    
-```
+
+
+
 
 ### Tables Description
 
