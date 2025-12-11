@@ -151,6 +151,36 @@ erDiagram
     qualifying_odds ||--o{ wc_2026_quals_goalkeeping_stats : links
     qualifying_odds ||--o{ wc_2026_quals_passing_stats : links
 
+    top_features {
+        feature_name text
+        ranking int2
+    }
+
+    erDiagram
+    top_features ||--o{ team_performance : references
+    top_features ||--o{ wc_2026_quals_standard_stats : references
+    top_features ||--o{ wc_2026_quals_shooting_stats : references
+    top_features ||--o{ wc_2026_quals_goalkeeping_stats : references
+    top_features ||--o{ wc_2026_quals_passing_stats : references
+
+    top_features {
+        id int8
+        match text
+        market text
+        pick text
+        current_odds text
+    }
+
+    erDiagram
+    top_features ||--o{ valuebets : informs
+
+
+
+
+    
+
+
+
 
 ### Tables Description
 
