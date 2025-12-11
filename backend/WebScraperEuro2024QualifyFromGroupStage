@@ -1,0 +1,94 @@
+import requests
+import pandas as pd
+import time
+from io import StringIO
+
+# ---------------------------------------
+#  COMPETITION + SEASON INPUTS
+# ---------------------------------------
+comp_id = 1
+season_id = 2024
+
+print(f"Using comp_id={comp_id}, season_id={season_id}")
+
+URL = "https://www.sportsoddshistory.com/soccer-uefa/?y=2024&sa=soccer&a=euro&b=two&o=r"
+
+
+def fetch_html(url, max_retries=3, timeout=15):
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Connection": "keep-alive",
+    }
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            if resp.status_code == 200:
+                return resp.text
+            else:
+                print(f"[Attempt {attempt}] HTTP {resp.status_code}")
+        except Exception as e:
+            print(f"[Attempt {attempt}] Error: {e}")
+        time.sleep(2 * attempt)
+
+    raise RuntimeError(f"Failed to fetch {url} after {max_retries} attempts")
+
+
+def scrape_june14_odds(url=URL):
+    html = fetch_html(url)
+
+    # Extract all tables on page
+    tables = pd.read_html(StringIO(html))
+    if not tables:
+        raise ValueError("No tables found on the page.")
+
+    # Pick the table with the most columns
+    df = max(tables, key=lambda t: t.shape[1])
+
+    # Find "Team" column
+    team_col = next((col for col in df.columns if "Team" in str(col)), None)
+    if team_col is None:
+        raise ValueError("Team column not found.")
+
+    # Find "Jun 14" column
+    odds_col = next((col for col in df.columns if "Jun 14" in str(col)), None)
+    if odds_col is None:
+        raise ValueError("Jun 14 column not found.")
+
+    # Create output dataframe
+    out = df[[team_col, odds_col]].copy()
+    out.columns = ["team", "odds"]
+
+    # Clean odds column
+    out["odds"] = (
+        out["odds"]
+        .astype(str)
+        .str.replace(",", "", regex=False)
+        .str.replace("*", "", regex=False)
+        .str.strip()
+    )
+    out["odds"] = pd.to_numeric(out["odds"], errors="coerce")
+
+    # Remove missing odds
+    out = out.dropna(subset=["odds"])
+
+    # Add comp_id & season_id
+    out["comp_id"] = comp_id
+    out["season_id"] = season_id
+
+    return out
+
+
+if __name__ == "__main__":
+    df = scrape_june14_odds()
+
+    # Save result
+    output_path = "euro_2024_june14_odds.csv"
+    df.to_csv(output_path, index=False)
+    print(f"\nSaved odds to: {output_path}")
