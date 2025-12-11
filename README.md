@@ -8,59 +8,122 @@ Sports Betting Companion is a data-driven tool that helps users find undervalued
 ### Entity Relationship Diagram
 ```mermaid
 erDiagram
-    USERS {
-        id uuid PK
-        username text
-        email text
-        password_hash text
-        balance numeric
-        created_at timestamptz
+    qualifying_odds {
+        id team text PK
+        odds float4
+        comp_id int2
+        season int2
     }
 
-    TEAMS {
-        id bigint PK
-        PI float
-        Age float
-        Poss float
-        PrgC float
-        PrgP float
-        Gls float
-        Ast float
-        G_A float
-        G_PK float
-        G_A_PK float
-        xG float
-        xAG float
-        xG_plus_xAG float
-        npxG float
-        npxG_plus_xAG float
-        Group_Stage_Opponent_1 text
-        Group_Stage_Opponent_2 text
-        Group_Stage_Opponent_3 text
-        RO16_Opponent text
-        Quarterfinal_Opponent text
-        SemiFinal_Opponent text
-        Final_Opponent text
+    TEAM PERFORMANCE {
+        team text
+        goals float4
+        penalty_shootout_goals float4
+        regulation_penalties_faced float4
+        regulation_penalties_saved float4
+        xg_non_pen float4
+        shots_on_target_xg float4
+        shots_total_ex_shots_on_target float4
+        first_time_shots float4
+        headers float4
+        passes float4
+        passes_completed float4
+        pass_accuracy_pct float4
+        long_passes_26m float4
+        crosses float4
+        through_balls float4
+        switch_passes float4
+        key_passes float4
+        assists float4
+        carries float4
+        progressive_carries float4
+        dribbles float4
+        tackles float4
+        interceptions float4
+        pressures float4
+        clearances float4
+        blocks float4
+        duels_won float4
+        duel_lost float4
+        aerial_duels float4
+        fouls_committed float4
+        fouls_won float4
+        yellow_cards float4
+        red_cards float4
+        possession_pct float4
+        GA float4
+        PKA float4
+        FK float4
+        CK float4
+        OG float4
+        PS/G float4
+        PSxG/SoT float4
+        PSxG+/- float4
+        gcp float4
+        Att float4
+        Comp% float4
+        Att_GK float4
+        Thr float4
+        Launch_pct float4
+        AvgLen float4
+        Opp float4
+        Stp float4
+        Stp_pct float4
+        OPA float4
+        OPA_per_90 float4
+        AvgDist float4
+        Qualify float4
+        Att_1 float4
+        Launch_pct_1 float4
+        AvgLen_1 float4
+        ts_id int2
+
+
     }
 
-    PLAYERS {
-        id bigint PK
-        name text
-        team_id bigint FK
-        position text
+    2026 WC Quals Standard Stats {
+        Squad text
+        Pl int8
+        Age float4
+        Poss float4
+        MP int8
+        Starts int8
+        Min text
+        Gls int8
+        Ast int8
+        G_A int8
+        G_PK int8
+        PKatt int8
+        CrdY int8
+        CrdR int8
+        Per90_Gls float4
+        Per90_Ast float4
+        Per90_GA float4
+        Per90_G_PK float4
+        Per90_GA_PK float4
+
+
     }
 
-    MATCHES {
-        id bigint PK
-        team1_id bigint FK
-        team2_id bigint FK
-        match_date timestamptz
-        score_team1 int
-        score_team2 int
-        status text
+    2026 WC Quals Shooting Stats {
+        Squad text
+        Pl float4
+        G90 float4
+        Gls float4
+        Sh float4
+        SoT float4
+        SoT_pct float4
+        Sh90 float4
+        SoT90 float4
+        G_per_Sh float4
+        G_per_SoT float4
+        Dist text
+        PK int8
+        PKatt int8
+  
     }
 
-    BETS {
+    2026 WC Quals Goalkeeping Stats {
         id bigint PK
         user_id uuid FK
         match_id bigint FK
@@ -71,12 +134,23 @@ erDiagram
         result text
         created_at timestamptz
     }
+    2026 WC Quals Passing Stats {
+        team text
+        pass_success_pct float4
+        accurate_passes_per float4
+        successful_long_ball float4
+        successful_long_ball_pct float4
+        cross_success_pct float4
+        crosses_per_match float4
+
 
     USERS ||--o{ BETS : places
     MATCHES ||--o{ BETS : contains
     TEAMS ||--o{ PLAYERS : has
     TEAMS ||--o{ MATCHES : team1
     TEAMS ||--o{ MATCHES : team2
+
+    
 ```
 
 ### Tables Description
