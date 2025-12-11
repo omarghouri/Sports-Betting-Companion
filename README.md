@@ -207,6 +207,25 @@ This table isolates the defensive end-state of matches, helping distinguish betw
 **wc_2026_quals_passing_stats**
 Provides passing efficiency and distribution metrics, including overall pass success, long-ball effectiveness, crossing accuracy, and volume per match.
 This table is useful for identifying stylistic differences between teams (possession-based vs direct play) and for augmenting tactical or clustering analyses.
+
+**top_features**
+Stores the ranked feature outputs from a model or feature-selection process.
+Each row represents a single feature used in analysis or modeling, along with its relative importance or ranking. This table acts as a bridge between raw performance data and decision-making layers, enabling transparency into which statistics most strongly influence predictions, odds evaluation, or betting logic.
+Typical use cases
+Feature importance tracking for ML models
+Model explainability and auditability
+Driving downstream logic (e.g., weighting bets or filtering metrics)
+Versioning which features matter across seasons or competitions
+
+**valuebets**
+Contains identified betting opportunities where market odds differ from model-implied probabilities.
+Each row represents a specific match, market, and pick, paired with the current available odds. This table operationalizes model outputs into actionable betting insights, making it the final consumer-facing or decision-support layer of the system.
+
+Typical use cases
+Surfacing high-value betting picks
+Monitoring market movement vs model confidence
+Powering dashboards or alerts
+Backtesting betting strategies over time
 ### Security Model
 We use **Row Level Security (RLS)** to ensure that users can only view and modify their own data.  
 - Only authenticated users can add or view their personalized bet analyses.
