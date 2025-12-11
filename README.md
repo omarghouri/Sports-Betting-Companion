@@ -154,83 +154,29 @@ erDiagram
 
 ### Tables Description
 
-#### 1) `users`
-Stores user information and account balance.
-- `id` (UUID, PK)  
-- `username` (TEXT)  
-- `email` (TEXT, unique)  
-- `password_hash` (TEXT)  
-- `balance` (NUMERIC) – user’s account balance  
-- `created_at` (TIMESTAMPTZ, default now)
+**qualifying_odds**
+Stores pre-tournament or pre-match betting odds for teams in World Cup qualification competitions.
+This table acts as the central reference point for probabilistic expectations and is used to join all performance datasets by team, competition, and season. It is especially useful as a target or contextual feature source for predictive modeling.
 
-#### 2) `teams`
-Represents each national team.
-- `id` (BIGINT, PK)  
-- '#Pl' float -Players Used
-- Age, float -Average Age of players used
-- Possession, float -Average Possession for team throughout tournament
-- PrgC, float - Progressive Passes Completed
-- ProP, float - Progressive Passes Attempted
-- Goals, float - Goals Scored
-- Ast, float- Assists
-- G + A, float, Goals + Assists
-- G + A - PK, float - Goals not including penalty kicks
-- xG, float - Expected Goals
-- xAG, float - Expected Goals Against
-- xG - xAG, float - Difference between Expected Goals and Excepted Goals against
-- Group_Stage_Opponent_1, text -Name of the first opponent the team faces during the group stage of a tournament.
-- Group_Stage_Opponent_2, text -Name of the second opponent in the group stage.
-- Group_Stage_Opponent_3, text -Name of the third opponent in the group stage.
-- RO16_Opponent, text -The opponent team the club/nation plays in the Round of 16 (knockout phase).
-- Quarterfinal_Opponent, text -The opposing team in the Quarter-Final round, if the team advances that far.
-- Column	Data Type	Explanation
-Group_Stage_Opponent_1	text	Name of the first opponent the team faces during the group stage of a tournament.
-Group_Stage_Opponent_2	text	Name of the second opponent in the group stage.
-Group_Stage_Opponent_3	text	Name of the third opponent in the group stage.
-RO16_Opponent	text	The opponent team the club/nation plays in the Round of 16 (knockout phase).
-Quarterfinal_Opponent	text -The opposing team in the Quarter-Final round, if the team advances that far.
-SemiFinal_Opponent, text	-The opponent faced in the Semi-Final stage of the tournament.
-Final_Opponent, text -The final match opponent if the team reaches the championship game.
+**team_performance**
+Contains a comprehensive, team-level performance profile covering attacking, defensive, possession, passing, dueling, and goalkeeping-adjacent metrics.
+This table aggregates advanced match actions (xG, pressures, progressive carries, duels, passing types, GK distribution) and is designed to serve as a high-dimensional feature table for team strength evaluation and qualification modeling.
 
-#### 3) `players`
-Links individual players to their team.
-- `id` (BIGINT, PK)  
-- `name` (TEXT)  
-- `team_id` (BIGINT, FK → teams.id)  
-- `position` (TEXT)
+**wc_2026_quals_standard_stats**
+Holds traditional team statistics from 2026 World Cup qualification matches, including appearances, minutes, goals, assists, cards, and per-90 rates.
+This table provides a baseline statistical view of team output and discipline, making it useful for sanity checks, historical comparisons, and lower-complexity models.
 
-#### 4) `matches`
-Stores match information and outcomes.
-- `id` (BIGINT, PK)  
-- `team1_id` (BIGINT, FK → teams.id)  
-- `team2_id` (BIGINT, FK → teams.id)  
-- `match_date` (TIMESTAMPTZ)  
-- `score_team1` (INT)  
-- `score_team2` (INT)  
-- `status` (TEXT: scheduled, in_progress, finished)  
-- `stage` (TEXT) – tournament stage (Group, R16, etc.)  
-- `venue` (TEXT)  
-- `api_ref` (TEXT) – optional external reference
+**wc_2026_quals_shooting_stats**
+Focuses specifically on shooting volume, efficiency, and shot quality at the team level.
+Metrics such as shots, shots on target, shot distance, and conversion ratios allow deeper analysis of chance creation vs finishing efficiency, complementing xG-based features in other tables.
 
-#### 5) `bets`
-Tracks bets users place on matches.
-- `id` (BIGINT, PK)  
-- `user_id` (UUID, FK → users.id)  
-- `match_id` (BIGINT, FK → matches.id)  
-- `bet_type` (TEXT) – e.g., moneyline, spread, total  
-- `bet_on` (TEXT) – team or outcome bet on  
-- `odds` (NUMERIC) – American odds  
-- `amount` (NUMERIC) – wagered amount  
-- `result` (TEXT: pending, won, lost, void)  
-- `created_at` (TIMESTAMPTZ, default now)
-##### 6) 'valuebets'
-- 'id' (BIGINT, PK)
--  'Match' (Text)
-- 'Market' (Text", Type of Bet Placed
-- "Pick": (Text, Who the user picked
-- "Fair Odds": (Text, Our Odds)
-- "Book": (Text, SportsBook Odds)
-- "Edge:(Text, Difference in Probability between Success from ours to market odds)
+**wc_2026_quals_goalkeeping_stats**
+Captures team-level goalkeeping outcomes, including goals allowed per 90, shots on target faced, saves, clean sheets, and penalty performance.
+This table isolates the defensive end-state of matches, helping distinguish between poor defending and elite goalkeeping in conceded-goal outcomes.
+
+**wc_2026_quals_passing_stats**
+Provides passing efficiency and distribution metrics, including overall pass success, long-ball effectiveness, crossing accuracy, and volume per match.
+This table is useful for identifying stylistic differences between teams (possession-based vs direct play) and for augmenting tactical or clustering analyses.
 ### Security Model
 We use **Row Level Security (RLS)** to ensure that users can only view and modify their own data.  
 - Only authenticated users can add or view their personalized bet analyses.
