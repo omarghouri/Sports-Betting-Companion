@@ -1,0 +1,287 @@
+#Euro2024
+
+import requests
+import pandas as pd
+import time
+from io import StringIO
+
+# ---------------------------------------
+#  COMPETITION + SEASON INPUTS
+# ---------------------------------------
+comp_id = 1
+season_id = 2024
+
+print(f"Using comp_id={comp_id}, season_id={season_id}")
+
+URL = "https://www.sportsoddshistory.com/soccer-uefa/?y=2024&sa=soccer&a=euro&b=two&o=r"
+
+
+def fetch_html(url, max_retries=3, timeout=15):
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Connection": "keep-alive",
+    }
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            if resp.status_code == 200:
+                return resp.text
+            else:
+                print(f"[Attempt {attempt}] HTTP {resp.status_code}")
+        except Exception as e:
+            print(f"[Attempt {attempt}] Error: {e}")
+        time.sleep(2 * attempt)
+
+    raise RuntimeError(f"Failed to fetch {url} after {max_retries} attempts")
+
+
+def scrape_june14_odds(url=URL):
+    html = fetch_html(url)
+
+    # Extract all tables on page
+    tables = pd.read_html(StringIO(html))
+    if not tables:
+        raise ValueError("No tables found on the page.")
+
+    # Pick the table with the most columns
+    df = max(tables, key=lambda t: t.shape[1])
+
+    # Find "Team" column
+    team_col = next((col for col in df.columns if "Team" in str(col)), None)
+    if team_col is None:
+        raise ValueError("Team column not found.")
+
+    # Find "Jun 14" column
+    odds_col = next((col for col in df.columns if "Jun 14" in str(col)), None)
+    if odds_col is None:
+        raise ValueError("Jun 14 column not found.")
+
+    # Create output dataframe
+    out = df[[team_col, odds_col]].copy()
+    out.columns = ["team", "odds"]
+
+    # Clean odds column
+    out["odds"] = (
+        out["odds"]
+        .astype(str)
+        .str.replace(",", "", regex=False)
+        .str.replace("*", "", regex=False)
+        .str.strip()
+    )
+    out["odds"] = pd.to_numeric(out["odds"], errors="coerce")
+
+    # Remove missing odds
+    out = out.dropna(subset=["odds"])
+
+    # Add comp_id & season_id
+    out["comp_id"] = comp_id
+    out["season_id"] = season_id
+
+    return out
+
+
+if __name__ == "__main__":
+    df = scrape_june14_odds()
+
+    # Save result
+    output_path = "euro_2024_june14_odds.csv"
+    df.to_csv(output_path, index=False)
+    print(f"\nSaved odds to: {output_path}")
+
+
+#2020 Euros
+
+import requests
+import pandas as pd
+import time
+from io import StringIO
+
+URL = "https://www.sportsoddshistory.com/soccer-grpw/?y=2020&sa=soccer&a=euro&b=grpq&o=r"
+
+def fetch_html(url, max_retries=3, timeout=15):
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Connection": "keep-alive",
+    }
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            if resp.status_code == 200:
+                return resp.text
+            else:
+                print(f"[Attempt {attempt}] HTTP {resp.status_code}")
+        except Exception as e:
+            print(f"[Attempt {attempt}] Error: {e}")
+        time.sleep(2 * attempt)
+
+    raise RuntimeError(f"Failed to fetch {url} after {max_retries} attempts")
+
+
+def scrape_june11_odds(url=URL):
+    html = fetch_html(url)
+
+    tables = pd.read_html(StringIO(html))
+    if not tables:
+        raise ValueError("No tables found on the page.")
+
+    df = max(tables, key=lambda t: t.shape[1])
+
+    # Find "Team" column
+    team_col = None
+    for col in df.columns:
+        if "Team" in str(col):
+            team_col = col
+            break
+
+    # Find Jun 11 column in this table
+    june11_col = None
+    for col in df.columns:
+        if "Jun 11" in str(col):
+            june11_col = col
+            break
+
+    if team_col is None or june11_col is None:
+        raise ValueError("Required columns not found (Team / Jun 11).")
+
+    out = df[[team_col, june11_col]].copy()
+    out.columns = ["team", "odds"]
+
+    # Clean odds
+    out["odds"] = (
+        out["odds"]
+        .astype(str)
+        .str.replace(",", "", regex=False)
+        .str.replace("*", "", regex=False)
+        .str.strip()
+    )
+    out["odds"] = pd.to_numeric(out["odds"], errors="coerce")
+
+    # Keep valid rows
+    out = out.dropna(subset=["odds"])
+
+    return out
+
+
+if __name__ == "__main__":
+    df = scrape_june11_odds()
+
+    # Add columns ONCE (correct way)
+    df["comp_id"] = 1
+    df["season_id"] = 2020
+
+    output_path = "euro_2020_group_qualifiers_june11_odds.csv"
+    df.to_csv(output_path, index=False)
+    print(f"\nSaved Group Qualifier June 11 odds to: {output_path}")
+
+
+#2022 World Cup
+
+import requests
+import pandas as pd
+import time
+from io import StringIO
+
+URL = "https://www.sportsoddshistory.com/soccer-grpw/?y=2022&sa=soccer&a=wc&b=grpq&o=r"
+
+def fetch_html(url, max_retries=3, timeout=15):
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Connection": "keep-alive",
+    }
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            if resp.status_code == 200:
+                return resp.text
+            else:
+                print(f"[Attempt {attempt}] HTTP {resp.status_code}")
+        except Exception as e:
+            print(f"[Attempt {attempt}] Error: {e}")
+        time.sleep(2 * attempt)
+
+    raise RuntimeError(f"Failed to fetch {url} after {max_retries} attempts")
+
+
+def scrape_nov_2022_odds(url=URL):
+    html = fetch_html(url)
+
+    tables = pd.read_html(StringIO(html))
+    if not tables:
+        raise ValueError("No tables found on the page.")
+
+    # Pick the widest table (same logic as your original script)
+    df = max(tables, key=lambda t: t.shape[1])
+
+    # Find "Team" column
+    team_col = None
+    for col in df.columns:
+        if "Team" in str(col):
+            team_col = col
+            break
+
+    if team_col is None:
+        raise ValueError("Could not find 'Team' column in the table.")
+
+    # Find the November 20, 2022 column
+    # The header on this page is "Nov 20, 2022" so we key off "Nov 20"
+    nov_col = None
+    for col in df.columns:
+        if "Nov 20" in str(col):
+            nov_col = col
+            break
+
+    if nov_col is None:
+        raise ValueError("Could not find 'Nov 20' column in the table.")
+
+    out = df[[team_col, nov_col]].copy()
+    out.columns = ["team", "odds"]
+
+    # Clean odds exactly like your original script
+    out["odds"] = (
+        out["odds"]
+        .astype(str)
+        .str.replace(",", "", regex=False)
+        .str.replace("*", "", regex=False)
+        .str.strip()
+    )
+    out["odds"] = pd.to_numeric(out["odds"], errors="coerce")
+
+    # Keep valid rows
+    out = out.dropna(subset=["odds"])
+
+    return out
+
+
+if __name__ == "__main__":
+    df = scrape_nov_2022_odds()
+
+    df["comp_id"] = 2
+    df["season_id"] = 2022
+
+    print(df.head())
+
+    output_path = "wc_2022_group_qualifiers_nov20_odds.csv"
+    df.to_csv(output_path, index=False)
+    print(f"\nSaved World Cup 2022 Group Qualifier November odds to: {output_path}")
+
