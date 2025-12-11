@@ -1,0 +1,124 @@
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    roc_auc_score,
+    classification_report,
+    confusion_matrix
+)
+
+# ---------- 1. Load data ----------
+# Update path if needed
+ad = pd.read_csv("RevisedMachineLearningDataSet - Sheet1-4.csv")
+
+# Drop non-numeric / ID columns and the weird '# Pl' column (string of numbers)
+drop_cols = ["team", "Qualify", "# Pl"]
+feature_cols = [c for c in ad.columns if c not in drop_cols]
+
+X = ad[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+y = ad["Qualify"]
+
+print("Shape X:", X.shape)
+print("Target balance:\n", y.value_counts())
+
+# ---------- 2. Train / test split ----------
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.3,       # 75% train / 25% test
+    random_state=42,
+    stratify=y            # preserve class balance
+)
+
+# ---------- 3. Define models ----------
+models = {
+    "LogisticRegression": Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", LogisticRegression(max_iter=2000))
+    ]),
+    "RandomForest": RandomForestClassifier(
+        n_estimators=300,
+        max_depth=None,
+        random_state=42,
+        n_jobs=-1
+    ),
+    "GradientBoosting": GradientBoostingClassifier(
+        random_state=42
+    )
+}
+
+results = []
+fitted_models = {}
+
+# ---------- 4. Train / evaluate ----------
+for name, model in models.items():
+    print(f"\n================ {name} ================")
+    model.fit(X_train, y_train)
+    fitted_models[name] = model
+
+    # Predictions
+    y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:, 1]
+
+    # Metrics
+    acc = accuracy_score(y_test, y_pred)
+    auc = roc_auc_score(y_test, y_proba)
+    cv_scores = cross_val_score(model, X, y, cv=5, scoring="roc_auc")
+
+    print(f"Test Accuracy   : {acc:.3f}")
+    print(f"Test ROC-AUC    : {auc:.3f}")
+    print(f"CV ROC-AUC (mean ± std): {cv_scores.mean():.3f} ± {cv_scores.std():.3f}")
+
+    print("\nClassification report:")
+    print(classification_report(y_test, y_pred, digits=3))
+
+    print("Confusion matrix:")
+    print(confusion_matrix(y_test, y_pred))
+
+    results.append({
+        "model": name,
+        "test_accuracy": acc,
+        "test_roc_auc": auc,
+        "cv_mean_roc_auc": cv_scores.mean(),
+        "cv_std_roc_auc": cv_scores.std()
+    })
+
+results_df = pd.DataFrame(results).set_index("model")
+print("\n\n==== Summary of model performance ====")
+print(results_df)
+
+# ---------- 5. Feature importances / coefficients ----------
+# Random Forest importances
+rf = fitted_models["RandomForest"]
+rf_importances = (
+    pd.Series(rf.feature_importances_, index=feature_cols)
+      .sort_values(ascending=False)
+)
+print("\nTop 15 RandomForest features:")
+print(rf_importances.head(15))
+
+# Gradient Boosting importances
+gb = fitted_models["GradientBoosting"]
+gb_importances = (
+    pd.Series(gb.feature_importances_, index=feature_cols)
+      .sort_values(ascending=False)
+)
+print("\nTop 15 GradientBoosting features:")
+print(gb_importances.head(15))
+
+# Logistic Regression coefficients (absolute impact)
+log_reg = fitted_models["LogisticRegression"]
+coef = log_reg.named_steps["clf"].coef_[0]
+lr_importances = (
+    pd.Series(coef, index=feature_cols)
+      .sort_values(key=np.abs, ascending=False)
+)
+print("\nTop 15 LogisticRegression coefficients (by |coef|):")
+print(lr_importances.head(15))
+
