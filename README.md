@@ -6,16 +6,15 @@
 Sports Betting Companion is a data-driven tool that helps users find undervalued soccer bets using historical data and live sportsbook odds. With the 2026 World Cup coming to the US, many new bettors may not know much about the teams or players. Our goal is to make it easier for them to make smarter, data-backed bets. By connecting historical performance data with sportsbook odds, users can identify which teams are statistically undervalued compared to their betting lines.
 
 ### Entity Relationship Diagram
-```mermaid
 erDiagram
     qualifying_odds {
-        id team text PK
+        team text
         odds float4
         comp_id int2
         season int2
     }
 
-    TEAM PERFORMANCE {
+    team_performance {
         team text
         goals float4
         penalty_shootout_goals float4
@@ -51,90 +50,92 @@ erDiagram
         yellow_cards float4
         red_cards float4
         possession_pct float4
-        GA float4
-        PKA float4
-        FK float4
-        CK float4
-        OG float4
-        PS/G float4
-        PSxG/SoT float4
-        PSxG+/- float4
+        ga float4
+        pka float4
+        fk float4
+        ck float4
+        og float4
+        ps_g float4
+        psxg_sot float4
+        psxg_plus_minus float4
         gcp float4
-        Att float4
-        Comp% float4
-        Att_GK float4
-        Thr float4
-        Launch_pct float4
-        AvgLen float4
-        Opp float4
-        Stp float4
-        Stp_pct float4
-        OPA float4
-        OPA_per_90 float4
-        AvgDist float4
-        Qualify float4
-        Att_1 float4
-        Launch_pct_1 float4
-        AvgLen_1 float4
+        att float4
+        comp_pct float4
+        att_gk float4
+        thr float4
+        launch_pct float4
+        avglen float4
+        opp float4
+        stp float4
+        stp_pct float4
+        opa float4
+        opa_per_90 float4
+        avgdist float4
+        qualify float4
+        att_1 float4
+        launch_pct_1 float4
+        avglen_1 float4
         ts_id int2
-
-
     }
 
-    2026 WC Quals Standard Stats {
-        Squad text
-        Pl int8
-        Age float4
-        Poss float4
-        MP int8
-        Starts int8
-        Min text
-        Gls int8
-        Ast int8
-        G_A int8
-        G_PK int8
-        PKatt int8
-        CrdY int8
-        CrdR int8
-        Per90_Gls float4
-        Per90_Ast float4
-        Per90_GA float4
-        Per90_G_PK float4
-        Per90_GA_PK float4
-
-
+    wc_2026_quals_standard_stats {
+        squad text
+        pl int8
+        age float4
+        poss float4
+        mp int8
+        starts int8
+        min text
+        gls int8
+        ast int8
+        g_a int8
+        g_pk int8
+        pkatt int8
+        crdy int8
+        crdr int8
+        per90_gls float4
+        per90_ast float4
+        per90_g_a float4
+        per90_g_pk float4
+        per90_g_a_pk float4
     }
 
-    2026 WC Quals Shooting Stats {
-        Squad text
-        Pl float4
-        G90 float4
-        Gls float4
-        Sh float4
-        SoT float4
-        SoT_pct float4
-        Sh90 float4
-        SoT90 float4
-        G_per_Sh float4
-        G_per_SoT float4
-        Dist text
-        PK int8
-        PKatt int8
-  
+    wc_2026_quals_shooting_stats {
+        squad text
+        pl float4
+        g90 float4
+        gls float4
+        sh float4
+        sot float4
+        sot_pct float4
+        sh90 float4
+        sot90 float4
+        g_per_sh float4
+        g_per_sot float4
+        dist text
+        pk int8
+        pkatt int8
     }
 
-    2026 WC Quals Goalkeeping Stats {
-        id bigint PK
-        user_id uuid FK
-        match_id bigint FK
-        bet_type text
-        bet_on text
-        odds numeric
-        amount numeric
-        result text
-        created_at timestamptz
+    wc_2026_quals_goalkeeping_stats {
+        squad text
+        ga90 float4
+        sota float4
+        saves float4
+        save_pct float4
+        w float4
+        d float4
+        l float4
+        cs float4
+        cs_pct float4
+        pkatt float4
+        pka float4
+        pksv float4
+        pkm float4
+        pk_save_pct float4
     }
-    2026 WC Quals Passing Stats {
+
+    wc_2026_quals_passing_stats {
         team text
         pass_success_pct float4
         accurate_passes_per float4
@@ -142,17 +143,13 @@ erDiagram
         successful_long_ball_pct float4
         cross_success_pct float4
         crosses_per_match float4
+    }
 
-    erDiagram
-        qualifying_odds ||--o{ team_performance : links
-        qualifying_odds ||--o{ wc_quals_standard_stats : links
-        qualifying_odds ||--o{ wc_quals_shooting_stats : links
-        qualifying_odds ||--o{ wc_quals_goalkeeping_stats : links
-        qualifying_odds ||--o{ wc_quals_passing_stats : links
-
-
-
-
+    qualifying_odds ||--o{ team_performance : links
+    qualifying_odds ||--o{ wc_2026_quals_standard_stats : links
+    qualifying_odds ||--o{ wc_2026_quals_shooting_stats : links
+    qualifying_odds ||--o{ wc_2026_quals_goalkeeping_stats : links
+    qualifying_odds ||--o{ wc_2026_quals_passing_stats : links
 
 
 ### Tables Description
