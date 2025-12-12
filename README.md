@@ -5,6 +5,14 @@
 ### Overview
 Sports Betting Companion is a data-driven tool that helps users find undervalued soccer bets using historical data and live sportsbook odds. With the 2026 World Cup coming to the US, many new bettors may not know much about the teams or players. Our goal is to make it easier for them to make smarter, data-backed bets. By connecting historical performance data with sportsbook odds, users can identify which teams are statistically undervalued compared to their betting lines.
 
+Data Sources Used:
+
+Statsbombpy(Historical International Tournament Team Stats)
+https://www.sportsoddshistory.com(Historical Qualify from Group Stage Odds)
+[FOX Sports Odds: ](https://www.foxsports.com/stories/soccer/2026-world-cup-odds-teams-favored-advance-knockout-stage-group-winner-odds): 2026 Odds to qualify from Group Stage
+Football Reference: 2026 World Cup Qualification Stats
+FotMob: 2026 World Cup Qualification Stats
+
 ### Entity Relationship Diagram
 ```mermaid
 erDiagram
@@ -240,3 +248,5 @@ using (
 ## Machine Learning Logic
 
 Used three different classification models: Logistic Regression, RandomForestClassifier, and Gradient Boosting. We used classification models because we had a categorical target feature, whether a team qualified(1) or didn't qualify(0). We used historical data from the 2022 World Cup and 2024 Euros to train and test. We used offensive, passing, and goalkeeping stats and averaged them across the number of games a team played in that tournament. With that, we fed the CSV into the different ML Models, using a 70%-30% train/test split because of our limited dataset; much of the data was unavailable due to excessive financial costs. From these models, we evaluated their success by their ROC_auc and accuracy scores. Random Forest had the highest ROC_auc at.764 Then, we examined the feature importances for each model and identified key features, including Shots on Target per 90 minutes, success_long_ball_pct, Goals Allowed, Post Shot Expected Goals, Possession, Passes Completed, and Pass_Success_pct. Because we did not have access to premium API subscriptions, we manually found equivalent statistics. We evaluated teams with high rankings in these statistics relative to their odds that were released on December 5th, then tagged them as undervalued. With more resources, we will develop a more complex formula to evaluate how undervalued these teams are and how much you should bet on them. Furthermore, expanding to player props and numerical bets, over/under is the logical next step. 
+
+To run the ML Models, download Dataset_to_import_to_ML_Models in backend folder.
