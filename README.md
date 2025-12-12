@@ -9,141 +9,154 @@ Sports Betting Companion is a data-driven tool that helps users find undervalued
 ```mermaid
 erDiagram
     qualifying_odds {
-        team text
-        odds float4
-        comp_id int2
-        season int2
+        text team
+        float4 odds
+        int2 comp_id
+        int2 season
     }
 
     team_performance {
-        team text
-        goals float4
-        penalty_shootout_goals float4
-        regulation_penalties_faced float4
-        regulation_penalties_saved float4
-        xg_non_pen float4
-        shots_on_target_xg float4
-        shots_total_ex_shots_on_target float4
-        first_time_shots float4
-        headers float4
-        passes float4
-        passes_completed float4
-        pass_accuracy_pct float4
-        long_passes_26m float4
-        crosses float4
-        through_balls float4
-        switch_passes float4
-        key_passes float4
-        assists float4
-        carries float4
-        progressive_carries float4
-        dribbles float4
-        tackles float4
-        interceptions float4
-        pressures float4
-        clearances float4
-        blocks float4
-        duels_won float4
-        duel_lost float4
-        aerial_duels float4
-        fouls_committed float4
-        fouls_won float4
-        yellow_cards float4
-        red_cards float4
-        possession_pct float4
-        ga float4
-        pka float4
-        fk float4
-        ck float4
-        og float4
-        ps_g float4
-        psxg_sot float4
-        psxg_plus_minus float4
-        gcp float4
-        att float4
-        comp_pct float4
-        att_gk float4
-        thr float4
-        launch_pct float4
-        avglen float4
-        opp float4
-        stp float4
-        stp_pct float4
-        opa float4
-        opa_per_90 float4
-        avgdist float4
-        qualify float4
-        att_1 float4
-        launch_pct_1 float4
-        avglen_1 float4
-        ts_id int2
+        text team
+        float4 goals
+        float4 penalty_shootout_goals
+        float4 regulation_penalties_faced
+        float4 regulation_penalties_saved
+        float4 xg_non_pen
+        float4 shots_on_target_xg
+        float4 shots_total_ex_shots_on_target
+        float4 first_time_shots
+        float4 headers
+        float4 passes
+        float4 passes_completed
+        float4 pass_accuracy_pct
+        float4 long_passes_26m
+        float4 crosses
+        float4 through_balls
+        float4 switch_passes
+        float4 key_passes
+        float4 assists
+        float4 carries
+        float4 progressive_carries
+        float4 dribbles
+        float4 tackles
+        float4 interceptions
+        float4 pressures
+        float4 clearances
+        float4 blocks
+        float4 duels_won
+        float4 duel_lost
+        float4 aerial_duels
+        float4 fouls_committed
+        float4 fouls_won
+        float4 yellow_cards
+        float4 red_cards
+        float4 possession_pct
+        float4 ga
+        float4 pka
+        float4 free_kicks
+        float4 corner_kicks
+        float4 own_goals
+        float4 ps_g
+        float4 psxg_sot
+        float4 psxg_plus_minus
+        float4 gcp
+        float4 att
+        float4 comp_pct
+        float4 att_gk
+        float4 thr
+        float4 launch_pct
+        float4 avglen
+        float4 opp
+        float4 stp
+        float4 stp_pct
+        float4 opa
+        float4 opa_per_90
+        float4 avgdist
+        float4 qualify
+        float4 att_1
+        float4 launch_pct_1
+        float4 avglen_1
+        int2 ts_id
     }
 
     wc_2026_quals_standard_stats {
-        squad text
-        pl int8
-        age float4
-        poss float4
-        mp int8
-        starts int8
-        min text
-        gls int8
-        ast int8
-        g_a int8
-        g_pk int8
-        pkatt int8
-        crdy int8
-        crdr int8
-        per90_gls float4
-        per90_ast float4
-        per90_g_a float4
-        per90_g_pk float4
-        per90_g_a_pk float4
+        text squad
+        int8 pl
+        float4 age
+        float4 poss
+        int8 mp
+        int8 starts
+        text minutes
+        int8 gls
+        int8 ast
+        int8 g_a
+        int8 g_pk
+        int8 pkatt
+        int8 crdy
+        int8 crdr
+        float4 per90_gls
+        float4 per90_ast
+        float4 per90_g_a
+        float4 per90_g_pk
+        float4 per90_g_a_pk
     }
 
     wc_2026_quals_shooting_stats {
-        squad text
-        pl float4
-        g90 float4
-        gls float4
-        sh float4
-        sot float4
-        sot_pct float4
-        sh90 float4
-        sot90 float4
-        g_per_sh float4
-        g_per_sot float4
-        dist text
-        pk int8
-        pkatt int8
+        text squad
+        float4 pl
+        float4 g90
+        float4 gls
+        float4 sh
+        float4 sot
+        float4 sot_pct
+        float4 sh90
+        float4 sot90
+        float4 g_per_sh
+        float4 g_per_sot
+        text dist
+        int8 penalty_kicks
+        int8 pkatt
     }
 
     wc_2026_quals_goalkeeping_stats {
-        squad text
-        ga90 float4
-        sota float4
-        saves float4
-        save_pct float4
-        w float4
-        d float4
-        l float4
-        cs float4
-        cs_pct float4
-        pkatt float4
-        pka float4
-        pksv float4
-        pkm float4
-        pk_save_pct float4
+        text squad
+        float4 ga90
+        float4 sota
+        float4 saves
+        float4 save_pct
+        float4 w
+        float4 d
+        float4 l
+        float4 cs
+        float4 cs_pct
+        float4 pkatt
+        float4 pka
+        float4 pksv
+        float4 pkm
+        float4 pk_save_pct
     }
 
     wc_2026_quals_passing_stats {
-        team text
-        pass_success_pct float4
-        accurate_passes_per float4
-        successful_long_ball float4
-        successful_long_ball_pct float4
-        cross_success_pct float4
-        crosses_per_match float4
+        text team
+        float4 pass_success_pct
+        float4 accurate_passes_per
+        float4 successful_long_ball
+        float4 successful_long_ball_pct
+        float4 cross_success_pct
+        float4 crosses_per_match
+    }
+
+    top_features {
+        text feature_name
+        int2 ranking
+    }
+
+    valuebets {
+        int8 id
+        text match_name
+        text market
+        text pick
+        text current_odds
     }
 
     qualifying_odds ||--o{ team_performance : links
@@ -151,30 +164,13 @@ erDiagram
     qualifying_odds ||--o{ wc_2026_quals_shooting_stats : links
     qualifying_odds ||--o{ wc_2026_quals_goalkeeping_stats : links
     qualifying_odds ||--o{ wc_2026_quals_passing_stats : links
-
-    top_features {
-        feature_name text
-        ranking int2
-    }
-
-    erDiagram
     top_features ||--o{ team_performance : references
     top_features ||--o{ wc_2026_quals_standard_stats : references
     top_features ||--o{ wc_2026_quals_shooting_stats : references
     top_features ||--o{ wc_2026_quals_goalkeeping_stats : references
     top_features ||--o{ wc_2026_quals_passing_stats : references
-
-    top_features {
-        id int8
-        match text
-        market text
-        pick text
-        current_odds text
-    }
-
-    erDiagram
     top_features ||--o{ valuebets : informs
-
+```
 
 
 
