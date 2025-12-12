@@ -7,8 +7,8 @@ Sports Betting Companion is a data-driven tool that helps users find undervalued
 
 Data Sources Used:
 
-Statsbombpy(Historical International Tournament Team Stats)
-https://www.sportsoddshistory.com(Historical Qualify from Group Stage Odds)
+Statsbombpy: Historical International Tournament Team Stats
+https://www.sportsoddshistory.com: Historical Qualify from Group Stage Odds
 [FOX Sports Odds: ](https://www.foxsports.com/stories/soccer/2026-world-cup-odds-teams-favored-advance-knockout-stage-group-winner-odds): 2026 Odds to qualify from Group Stage
 Football Reference: 2026 World Cup Qualification Stats
 FotMob: 2026 World Cup Qualification Stats
