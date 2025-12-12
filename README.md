@@ -251,7 +251,7 @@ Used three different classification models: Logistic Regression, RandomForestCla
 
 To run the ML Models, download Dataset_to_import_to_ML_Models in backend folder.
 
-##Frontend 
+## Frontend 
 
 - Value Bets Panel: Top Value bets determined by the Machine Learning Model, showcased through specific matches, picks and odds
 - Upcoming Matches Sidebar: Upcoming matches displayed on below the value bets panel and next to the AI assistant, displaying upcoming matches for the 2026 World CUp
