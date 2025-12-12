@@ -223,71 +223,10 @@ Surfacing high-value betting picks
 Monitoring market movement vs model confidence
 Powering dashboards or alerts
 Backtesting betting strategies over time
-### Security Model
-We use **Row Level Security (RLS)** to ensure that users can only view and modify their own data.  
-- Only authenticated users can add or view their personalized bet analyses.
-- Furthermore, for data privacy reasons, we restrict the Bets and Users tables to respect the users who use our product.
-- Code: alter policy "Enable read access for all users"
-2
-on "public"."matches"
-5
-to public
-6
+
 using (
 
 # Sports Betting Companion API
-
-## What it does
-Our API connects to Supabase tables to implement business logic for a sports prediction platform. It allows users to view teams, players, matches, and record their predictions. 
-
-## Setup
-1. `pip install -r requirements.txt`
-2. Add `.env` with Supabase credentials
-3. `uvicorn api:app --reload`
-4. Test at http://localhost:8000/docs
-
-## Endpoints
-- GET /teams – Retrieve all teams
-- GET /matches – Retrieve all matches
-- POST /matches – Add a new match
-- GET /picks – Get all user predictions
-- POST /picks – Add a new prediction
-- GET /results – Retrieve match results
-- POST /results – Add or update a match result
-- GET /user_bets – Retrieve bets by user and type
-- GET /valuebets - Retrieves valuebets from Supabase
-- POST /valuebets - Posts the highest probability of success valuebets into frontend
-
-## Key Business Rule
-Endpoint 1: get_teams()
-- Displays all teams stored in the teams table.
-- Each team includes its name, country code, and group.
-
-Endpoint 2: get_matches() / post_matches()
-- Returns all matches in the matches table, including team names, match date, and stage.
-- Adds a new match.
-- Requires team1_id, team2_id, match_date, and venue.
-- Ensures the date is in the future and teams are not the same.
-
-Endpoint 3: get_picks() / post_picks()
-- Retrieves all user predictions stored in the bets table.
-- Creates a new prediction for a user.
-- Prevents duplicate predictions for the same user and match.
-- Only allows predictions for upcoming matches.
-
-Endpoint 4: get_results() / post_results()
-- Returns finalized match results with scores.
-- Allows updating results (e.g., setting final scores and marking matches as complete).
-
-Endpoint 5: get_user_bets()
-- Retrieves all bets for a specific user and bet_type.
-- Returns their past predictions and outcomes.
-
-### Key Business Rules
-- Users cannot create duplicate picks for the same match.
-- Match date must be in the future for upcoming matches.
-- team1_id and team2_id must be different.
-- When results are posted, related bets are automatically marked as win, loss, or push.
 
 ### Setup Instructions
 - pip install supabase
