@@ -254,6 +254,6 @@ To run the ML Models, download Dataset_to_import_to_ML_Models in backend folder.
 - Value Bets Panel: Top Value bets determined by the Machine Learning Model, showcased through specific matches, picks and odds
 - Upcoming Matches Sidebar: Upcoming matches displayed on below the value bets panel and next to the AI assistant, displaying upcoming matches for the 2026 World Cup
 - AI Assitant Chatbot: AI assistant, utilizing gemini flash 2.5, with context from our database and machine learning models that can assist users with bet placing, matches, and understanding top features that affect odds.
-* Example Prompts:
-**     what are the top features when determining whether a group qualifies from the group stage?
-**     I have $50, what are the top value bets that I can spread my money across. 
+-  Example Prompts:
+   1. what are the top features when determining whether a group qualifies from the group stage?
+   2.  I have $50, what are the top value bets that I can spread my money across. 
