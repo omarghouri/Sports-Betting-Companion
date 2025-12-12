@@ -298,21 +298,6 @@ Endpoint 5: get_user_bets()
 - Python 3.10+
 - Supabase account
 
+## Machine Learning Logic
 
-# Frontend Components
-
-## Team & Contributions
-- **Linus**: Created new endpoints on back end to connect to the UI
-- **Omar Ghouri**: Organized repository structure / created api.js to manage requests from frontend to backend
-- **Bouanani Idrissi Oumaima**:Contributed to backend feature implementation, including refining API logic for bets, value bets, and match validation, participated in end-to-end testing and worked on deployment using Docker and cloud run,and fixed the bugs of the failing frontend and backedn after deplying.
-- **Mike D'Auria**: Remade API endpoints and Supbase Tables to reflect the information included in the frontend(valuebets and Team Tournament Performance)
-
-## What It Does
-SBC (Sports Betting Companion) analyzes World Cup 2026 matches to identify value betting opportunities by comparing fair odds against sportsbook lines. The platform displays upcoming fixtures, calculates expected value (EV) and edge percentages, and provides a chatbot interface for querying betting information. Users can quickly scan high-value bets across different markets including moneylines, handicaps, totals, and prop bets.
-
-## Frontend Setup
-- npm install
-- npm run dev
-
-## Mock Data
-Our app uses mock data for World Cup 2026 fixtures, betting lines, and value calculations. The odds, edge percentages, and EV metrics are illustrative examples based on typical sports betting scenarios. Next week we'll connect it to our backend APIs for real-time odds feeds and live model predictions.
+Used three different classification models: Logistic Regression, RandomForestClassifier, and Gradient Boosting. We used classification models because we had a categorical target feature, whether a team qualified(1) or didn't qualify(0). We used historical data from the 2022 World Cup and 2024 Euros to train and test. We used offensive, passing, and goalkeeping stats and averaged them across the number of games a team played in that tournament. With that, we fed the CSV into the different ML Models, using a 70%-30% train/test split because of our limited dataset; much of the data was unavailable due to excessive financial costs. From these models, we evaluated their success by their ROC_auc and accuracy scores. Random Forest had the highest ROC_auc at.764 Then, we examined the feature importances for each model and identified key features, including Shots on Target per 90 minutes, success_long_ball_pct, Goals Allowed, Post Shot Expected Goals, Possession, Passes Completed, and Pass_Success_pct. Because we did not have access to premium API subscriptions, we manually found equivalent statistics. We evaulated teams with high rankings in these statistics relative to their odds that were released on December 5th, then tagged them as undervalued. With more resources we will make a more complex formula to evaluate how much these teams are undervalued and how much you should bet on them. 
