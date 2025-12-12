@@ -232,8 +232,6 @@ Monitoring market movement vs model confidence
 Powering dashboards or alerts
 Backtesting betting strategies over time
 
-using (
-
 # Sports Betting Companion API
 
 ### Setup Instructions
